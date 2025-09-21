@@ -1,1 +1,30 @@
+# 1. Ambientes Virtuais
+# Ignora a pasta do ambiente virtual que contém todas as dependências instaladas.
+# Isso é crucial, pois ela é específica da máquina e pode ser muito grande.
+.venv/
+venv/
+env/
+
+# 2. Configuração de IDE
+# Ignora a pasta de configuração do PyCharm/IntelliJ.
 .idea/
+
+# 3. Cache e Artefatos do Python
+# Ignora as pastas de cache de bytecode geradas automaticamente pelo Python.
+__pycache__/
+
+# Ignora outros tipos de arquivos compilados do Python.
+*.pyc
+*.pyo
+*.pyd
+
+# 4. Arquivos de Variáveis de Ambiente
+# Nunca adicione arquivos .env ao Git, pois eles contêm senhas e chaves de API.
+.env
+.env.*
+# A linha abaixo é uma exceção para permitir um arquivo de exemplo, que é uma boa prática.
+!/.env.example
+
+# 5. Arquivos gerados pelo SO
+# Cache de miniaturas do Windows
+Thumbs.db
