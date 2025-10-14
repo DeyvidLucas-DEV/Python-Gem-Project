@@ -50,7 +50,11 @@ __all__ = [
     "SubgrupoCreate",
     "SubgrupoUpdate",
     "SubgrupoInDB",
-    "subgrupo.py",
+    "Subgrupo",
     "SubgrupoSummary",
     "SubgrupoWithRelations",
 ]
+
+MembroWithRelations.model_rebuild()
+PublicacaoWithRelations.model_rebuild()
+SubgrupoWithRelations.model_rebuild()
