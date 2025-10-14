@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from sqlalchemy.orm import selectinload
@@ -26,7 +26,6 @@ class CRUDSubgrupo(CRUDBase[Subgrupo, SubgrupoCreate, SubgrupoUpdate]):
             membro_id: int
     ) -> bool:
         """Adicionar membro ao subgrupo."""
-        # Verificar se a associação já existe
         query = select(membros_subgrupos).where(
             and_(
                 membros_subgrupos.c.subgrupo_id == subgrupo_id,
@@ -38,7 +37,6 @@ class CRUDSubgrupo(CRUDBase[Subgrupo, SubgrupoCreate, SubgrupoUpdate]):
         if result.first():
             return False  # Associação já existe
 
-        # Criar nova associação
         stmt = membros_subgrupos.insert().values(
             subgrupo_id=subgrupo_id,
             membro_id=membro_id
