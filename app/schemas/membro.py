@@ -1,13 +1,20 @@
+from __future__ import annotations
+
+# Import Field from pydantic, not field from dataclasses
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
+
+# Use TYPE_CHECKING to avoid circular imports at runtime
+if TYPE_CHECKING:
+    from .subgrupo import SubgrupoSummary
+    from .publicacao import PublicacaoSummary
 
 
 class MembroBase(BaseModel):
     """Schema base para Membro."""
     nome: str = Field(..., min_length=1, max_length=255, description="Nome do membro")
-    descricao: Optional[str] = Field(None, description="Descrição do membro")
-    experiencia: Optional[str] = Field(None, description="Experiência do membro")
+    email: Optional[str] = Field(None, description="Email do membro")
 
 
 class MembroCreate(MembroBase):
@@ -18,8 +25,7 @@ class MembroCreate(MembroBase):
 class MembroUpdate(BaseModel):
     """Schema para atualização de Membro."""
     nome: Optional[str] = Field(None, min_length=1, max_length=255)
-    descricao: Optional[str] = None
-    experiencia: Optional[str] = None
+    email: Optional[str] = None
 
 
 class MembroInDB(MembroBase):
@@ -37,7 +43,7 @@ class Membro(MembroInDB):
 
 
 class MembroSummary(BaseModel):
-    """Schema resumido para Membro (usado em relacionamentos)."""
+    """Schema para um resumo de Membro (usado em relações)."""
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -46,16 +52,6 @@ class MembroSummary(BaseModel):
 
 class MembroWithRelations(Membro):
     """Schema para Membro com relacionamentos."""
-    from .Subgrupo import SubgrupoSummary
-    from .publicacao import PublicacaoSummary
-
-    subgrupos: list[SubgrupoSummary] = []
-    publicacoes: list[PublicacaoSummary] = []
-
-
-class SubgrupoSummary(BaseModel):
-    """Schema resumido para Subgrupo (usado em relacionamentos)."""
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    nome_grupo: str
+    # Use pydantic.Field with default_factory
+    subgrupos: list[SubgrupoSummary] = Field(default_factory=list)
+    publicacoes: list[PublicacaoSummary] = Field(default_factory=list)

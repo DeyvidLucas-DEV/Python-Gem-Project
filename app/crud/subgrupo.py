@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 from app.crud.base import CRUDBase
 from app.models.subgrupo import Subgrupo
 from app.models.associations import membros_subgrupos
-from app.schemas.Subgrupo import SubgrupoCreate, SubgrupoUpdate
+from app.schemas.subgrupo import SubgrupoCreate, SubgrupoUpdate
 
 
 class CRUDSubgrupo(CRUDBase[Subgrupo, SubgrupoCreate, SubgrupoUpdate]):

@@ -1,7 +1,15 @@
+from __future__ import annotations
+
+# Import Field from pydantic, not field from dataclasses
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from enum import Enum
+
+# Use TYPE_CHECKING to avoid circular imports at runtime
+if TYPE_CHECKING:
+    from .membro import MembroSummary
+    from .subgrupo import SubgrupoSummary
 
 
 class TipoPublicacaoEnum(str, Enum):
@@ -25,8 +33,8 @@ class PublicacaoBase(BaseModel):
 
 class PublicacaoCreate(PublicacaoBase):
     """Schema para criação de Publicação."""
-    autor_ids: list[int] = Field(default=[], description="IDs dos autores")
-    subgrupo_ids: list[int] = Field(default=[], description="IDs dos subgrupos")
+    autor_ids: list[int] = Field(default_factory=list, description="IDs dos autores")
+    subgrupo_ids: list[int] = Field(default_factory=list, description="IDs dos subgrupos")
 
 
 class PublicacaoUpdate(BaseModel):
@@ -62,10 +70,9 @@ class PublicacaoSummary(BaseModel):
     type: TipoPublicacaoEnum
 
 
+
 class PublicacaoWithRelations(Publicacao):
     """Schema para Publicação com relacionamentos."""
-    from .membro import MembroSummary
-    from .Subgrupo import SubgrupoSummary
-
-    autores: list[MembroSummary] = []
-    subgrupos: list[SubgrupoSummary] = []
+    # Use pydantic.Field with default_factory
+    autores: list[MembroSummary] = Field(default_factory=list)
+    subgrupos: list[SubgrupoSummary] = Field(default_factory=list)
