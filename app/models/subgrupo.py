@@ -35,5 +35,7 @@ class Subgrupo(Base, TimestampMixin):
         lazy="selectin"
     )
 
+    infografico: Mapped[Optional[bytes]] = mapped_column(LargeBinary)
+
     def __repr__(self) -> str:
         return f"<Subgrupo(id={self.id}, nome='{self.nome_grupo}')>"

@@ -2,6 +2,8 @@ from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+
+
 from app import crud, schemas
 from app.api import deps
 from app.core.config import settings
@@ -48,22 +50,40 @@ async def read_subgrupos(
 
 @router.post("/", response_model=schemas.Subgrupo, status_code=status.HTTP_201_CREATED)
 async def create_subgrupo(
-        *,
-        db: AsyncSession = Depends(deps.get_db_session),
-        subgrupo_in: schemas.SubgrupoCreate,
+    *,
+    db: AsyncSession = Depends(deps.get_db_session),
+    subgrupo_in: schemas.SubgrupoCreate,
 ) -> Any:
     """
     Criar novo subgrupo.
     """
-    # Verificar se já existe subgrupo com o mesmo nome
+    import base64
+
+    # Verifica duplicidade
     existing = await crud.subgrupo.get_by_nome(db, nome_grupo=subgrupo_in.nome_grupo)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Subgrupo com este nome já existe"
+            detail="Subgrupo com este nome já existe",
         )
 
-    subgrupo = await crud.subgrupo.create(db, obj_in=subgrupo_in)
+    data = subgrupo_in.model_dump() if hasattr(subgrupo_in, "model_dump") else subgrupo_in.dict()
+
+    # Força a conversão pra bytes se o campo vier como string
+    if data.get("infografico") and isinstance(data["infografico"], str):
+        value = data["infografico"]
+        if value.startswith("data:") and "," in value:
+            value = value.split(",", 1)[1]
+        try:
+            data["infografico"] = base64.b64decode(value)
+        except Exception:
+            data["infografico"] = value.encode("utf-8")
+
+    subgrupo_obj = schemas.SubgrupoCreate(**data)
+
+    print("DEBUG tipo final:", type(subgrupo_obj.infografico), subgrupo_obj.infografico)
+
+    subgrupo = await crud.subgrupo.create(db, obj_in=subgrupo_obj)
     return schemas.Subgrupo.model_validate(subgrupo)
 
 
@@ -281,3 +301,32 @@ async def upload_background_subgrupo(
     )
 
     return {"message": "Background atualizado com sucesso"}
+
+@router.post("/{id}/upload-infografico")
+async def upload_infografico_subgrupo(
+        *,
+        db: AsyncSession = Depends(deps.get_db_session),
+        id: int,
+        file: UploadFile = File(...),
+) -> dict:
+    """
+    Upload do infográfico (campo BYTEA).
+    """
+    subgrupo = await crud.subgrupo.get(db, id=id)
+    if not subgrupo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Subgrupo não encontrado"
+        )
+
+    # Ler arquivo
+    content = await file.read()
+
+    # Atualizar subgrupo
+    await crud.subgrupo.update(
+        db,
+        db_obj=subgrupo,
+        obj_in={"infografico": content}
+    )
+
+    return {"message": "Infográfico atualizado com sucesso"}

@@ -1,11 +1,10 @@
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
-from fastapi import HTTPException, status
-
 from app.core.database import Base
+import base64
 
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -25,11 +24,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.model = model
 
     async def get(
-            self,
-            db: AsyncSession,
-            id: Any,
-            *,
-            load_relations: bool = False
+        self,
+        db: AsyncSession,
+        id: Any,
+        *,
+        load_relations: bool = False
     ) -> Optional[ModelType]:
         """Buscar um registro por ID."""
         query = select(self.model).where(self.model.id == id)
@@ -43,13 +42,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return result.scalar_one_or_none()
 
     async def get_multi(
-            self,
-            db: AsyncSession,
-            *,
-            skip: int = 0,
-            limit: int = 100,
-            filters: Optional[Dict[str, Any]] = None,
-            load_relations: bool = False
+        self,
+        db: AsyncSession,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        filters: Optional[Dict[str, Any]] = None,
+        load_relations: bool = False
     ) -> tuple[List[ModelType], int]:
         """
         Buscar múltiplos registros com paginação e filtros.
@@ -88,35 +87,59 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         return list(items), total
 
-    async def create(
-            self,
-            db: AsyncSession,
-            *,
-            obj_in: CreateSchemaType
-    ) -> ModelType:
-        """Criar um novo registro."""
-        obj_data = obj_in.model_dump() if hasattr(obj_in, 'model_dump') else obj_in.dict()
+    async def create(self, db: AsyncSession, *, obj_in):
+        """
+        Criar um novo registro no banco de dados.
+        Converte automaticamente o campo 'infografico' de base64 para bytes, se presente.
+        """
+        # --- Converte Pydantic pra dict ---
+        if hasattr(obj_in, "model_dump"):
+            obj_data = obj_in.model_dump()
+        elif hasattr(obj_in, "dict"):
+            obj_data = obj_in.dict()
+        elif isinstance(obj_in, dict):
+            obj_data = obj_in
+        else:
+            raise TypeError(f"Tipo inesperado em create(): {type(obj_in)}")
+
+        # --- FORÇA a conversão de infografico ---
+        if "infografico" in obj_data and obj_data["infografico"] is not None:
+            value = obj_data["infografico"]
+            print("DEBUG antes da conversão:", type(value), value)
+            if isinstance(value, str):
+                try:
+                    obj_data["infografico"] = base64.b64decode(value)
+                    print("DEBUG convertido (base64):", type(obj_data["infografico"]))
+                except Exception:
+                    obj_data["infografico"] = value.encode("utf-8")
+                    print("DEBUG convertido (utf-8):", type(obj_data["infografico"]))
+            else:
+                print("DEBUG já é bytes:", type(value))
+
         db_obj = self.model(**obj_data)
+        print("DEBUG FINAL antes do flush:", type(db_obj.infografico), db_obj.infografico)
 
         db.add(db_obj)
         await db.flush()
         await db.refresh(db_obj)
-
         return db_obj
 
     async def update(
-            self,
-            db: AsyncSession,
-            *,
-            db_obj: ModelType,
-            obj_in: Union[UpdateSchemaType, Dict[str, Any]]
+        self,
+        db: AsyncSession,
+        *,
+        db_obj: ModelType,
+        obj_in: Union[UpdateSchemaType, Dict[str, Any]]
     ) -> ModelType:
         """Atualizar um registro existente."""
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
-            update_data = obj_in.model_dump(exclude_unset=True) if hasattr(obj_in, 'model_dump') else obj_in.dict(
-                exclude_unset=True)
+            update_data = (
+                obj_in.model_dump(exclude_unset=True)
+                if hasattr(obj_in, 'model_dump')
+                else obj_in.dict(exclude_unset=True)
+            )
 
         for field, value in update_data.items():
             if hasattr(db_obj, field):
@@ -124,7 +147,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         await db.flush()
         await db.refresh(db_obj)
-
         return db_obj
 
     async def remove(self, db: AsyncSession, *, id: int) -> Optional[ModelType]:

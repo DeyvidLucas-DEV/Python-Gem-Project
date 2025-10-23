@@ -15,6 +15,7 @@ class MembroBase(BaseModel):
     """Schema base para Membro."""
     nome: str = Field(..., min_length=1, max_length=255, description="Nome do membro")
     email: Optional[str] = Field(None, description="Email do membro")
+    experiencia: Optional[str] = Field(None, description="Experiência do membro")
 
 
 class MembroCreate(MembroBase):
@@ -48,10 +49,18 @@ class MembroSummary(BaseModel):
 
     id: int
     nome: str
-
+    experiencia: Optional[str] = None
 
 class MembroWithRelations(Membro):
     """Schema para Membro com relacionamentos."""
     # Use pydantic.Field with default_factory
     subgrupos: list[SubgrupoSummary] = Field(default_factory=list)
     publicacoes: list[PublicacaoSummary] = Field(default_factory=list)
+
+class MembroSchema(BaseModel):
+    id: int
+    nome: str
+    experiencia: Optional[str] = None
+
+    class Config:
+        orm_mode = True
