@@ -41,7 +41,6 @@ pipeline {
         }
     }
 
-    Opcional: Ações a serem executadas após o pipeline (sucesso, falha, etc.)
     post {
         success {
             echo 'Pipeline concluído com sucesso!'
