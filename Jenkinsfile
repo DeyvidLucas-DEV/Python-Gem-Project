@@ -1,6 +1,6 @@
 // Jenkinsfile
 pipeline {
-    agent any // Roda em qualquer agente disponível
+    agent { label 'master' } // <<< ALTERADO: Tenta forçar a execução no nó principal
 
     stages {
         // Fase 1: Baixar o código do GitHub
@@ -28,11 +28,11 @@ pipeline {
                 sh 'echo "Iniciando build e deploy..."'
 
                 // Executa docker-compose usando o interpretador python3 explicitamente
-                // (Garantimos que /usr/bin/python3 existe e aponta para o python3 correto)
+                // (Garantimos que /usr/bin/python3 existe e aponta para o python3 correto NO HOST)
                 sh '/usr/bin/python3 /usr/bin/docker-compose -f docker-compose.yml down'
                 sh '/usr/bin/python3 /usr/bin/docker-compose -f docker-compose.yml up -d --build'
 
-                // Comando docker image prune -f deve funcionar normalmente se 'docker' estiver acessível
+                // Comando docker image prune -f deve funcionar normally se 'docker' estiver acessível
                 sh 'docker image prune -f'
                 sh 'echo "Deploy finalizado!"'
             }
