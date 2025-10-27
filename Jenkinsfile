@@ -26,20 +26,13 @@ pipeline {
             steps {
                 sh 'echo "Iniciando build e deploy..."'
 
-                // --- DIAGNÓSTICOS ---
-                sh 'echo "--- Diagnósticos de Ambiente ---"'
-                sh 'echo "Usuário atual: $(whoami)"' // Confirma o usuário
-                sh 'echo "PATH atual: $PATH"'        // Mostra o PATH que o Jenkins está usando
-                sh 'echo "Verificando /usr/bin/docker-compose..."'
-                sh 'ls -l /usr/bin/docker-compose'   // Verifica existência e permissões
-                sh 'echo "Tentando executar --version diretamente..."'
-                sh '/usr/bin/docker-compose --version || echo "**** Falha ao executar --version ****"' // Tenta executar um comando simples
-                sh 'echo "--- Fim dos Diagnósticos ---"'
-                // --- FIM DOS DIAGNÓSTICOS ---
+                // --- Removendo Diagnósticos ---
 
-                // Comandos originais (mantendo caminho completo por enquanto)
-                sh '/usr/bin/docker-compose -f docker-compose.yml down'
-                sh '/usr/bin/docker-compose -f docker-compose.yml up -d --build'
+                // Executa docker-compose usando o interpretador python3 explicitamente
+                sh '/usr/bin/python3 /usr/bin/docker-compose -f docker-compose.yml down'
+                sh '/usr/bin/python3 /usr/bin/docker-compose -f docker-compose.yml up -d --build'
+
+                // Comando docker image prune -f deve funcionar normalmente
                 sh 'docker image prune -f'
                 sh 'echo "Deploy finalizado!"'
             }
