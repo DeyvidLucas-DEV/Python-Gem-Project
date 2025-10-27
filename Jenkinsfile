@@ -23,7 +23,7 @@ pipeline {
         }
 
         // Fase 3: Buildar a imagem Docker e fazer Deploy com Docker Compose
-        sstage('Build & Deploy') {
+        stage('Build & Deploy') {
             steps {
                 sh 'echo "Iniciando build e deploy..."'
                 // Usando caminho completo
