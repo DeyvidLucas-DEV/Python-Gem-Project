@@ -22,11 +22,22 @@ pipeline {
             }
         }
 
-        // Fase 3: Buildar a imagem Docker e fazer Deploy com Docker Compose
         stage('Build & Deploy') {
             steps {
                 sh 'echo "Iniciando build e deploy..."'
-                // Usando caminho completo (ajustado para /usr/bin)
+
+                // --- DIAGNÓSTICOS ---
+                sh 'echo "--- Diagnósticos de Ambiente ---"'
+                sh 'echo "Usuário atual: $(whoami)"' // Confirma o usuário
+                sh 'echo "PATH atual: $PATH"'        // Mostra o PATH que o Jenkins está usando
+                sh 'echo "Verificando /usr/bin/docker-compose..."'
+                sh 'ls -l /usr/bin/docker-compose'   // Verifica existência e permissões
+                sh 'echo "Tentando executar --version diretamente..."'
+                sh '/usr/bin/docker-compose --version || echo "**** Falha ao executar --version ****"' // Tenta executar um comando simples
+                sh 'echo "--- Fim dos Diagnósticos ---"'
+                // --- FIM DOS DIAGNÓSTICOS ---
+
+                // Comandos originais (mantendo caminho completo por enquanto)
                 sh '/usr/bin/docker-compose -f docker-compose.yml down'
                 sh '/usr/bin/docker-compose -f docker-compose.yml up -d --build'
                 sh 'docker image prune -f'
