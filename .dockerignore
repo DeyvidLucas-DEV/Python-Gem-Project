@@ -1,0 +1,30 @@
+# Arquivo: .dockerignore
+
+# Ignorar pastas de cache do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorar ambientes virtuais
+venv/
+.venv/
+
+# Ignorar arquivos de ambiente (se houver)
+*.env
+.env*
+
+# Ignorar pastas e arquivos do Git
+.git/
+.gitignore
+
+# Ignorar arquivos de configuração do Docker e outros
+.dockerignore
+Dockerfile
+docker-compose.yml
+Jenkinsfile
+nginx.conf
+README.md
+
+# Adicione outros arquivos/pastas que não devem ir para a imagem
+# Ex: test/, docs/, etc.

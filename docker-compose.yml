@@ -1,0 +1,33 @@
+# Arquivo: docker-compose.yml
+version: '3.8'
+
+services:
+  app:
+    build: .  # Constrói a imagem usando o Dockerfile na pasta atual (.)
+    container_name: python-gem-app
+    restart: unless-stopped
+    expose:
+      - "8000" # Expõe a porta 8000 apenas para outros serviços na rede Docker (como o Nginx)
+    # Se sua aplicação precisar de variáveis de ambiente, descomente e crie o arquivo .env
+    # env_file:
+    #   - .env
+    # Se precisar de volumes persistentes (ex: banco de dados, uploads), adicione aqui
+    # volumes:
+    #   - ./dados_persistentes:/code/dados
+
+  nginx:
+    image: nginx:alpine # Imagem leve do Nginx
+    container_name: python-gem-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80" # Mapeia a porta 80 do host para a porta 80 do container Nginx
+    volumes:
+      # Mapeia o arquivo de configuração local para dentro do container Nginx (read-only)
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app # Garante que o container 'app' inicie antes do 'nginx'
+
+# Você pode definir redes customizadas aqui se necessário
+# networks:
+#   default:
+#     driver: bridge
