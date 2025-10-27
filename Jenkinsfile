@@ -23,22 +23,17 @@ pipeline {
         }
 
         // Fase 3: Buildar a imagem Docker e fazer Deploy com Docker Compose
-        stage('Build & Deploy') {
+        sstage('Build & Deploy') {
             steps {
                 sh 'echo "Iniciando build e deploy..."'
-
-                // 1. Para e remove containers antigos (se existirem), usando o arquivo correto
-                sh 'docker-compose -f docker-compose.yml down'
-
-                // 2. Constrói a nova imagem (se necessário) e sobe os containers (App + Nginx) em background (-d)
-                sh 'docker-compose -f docker-compose.yml up -d --build'
-
-                // 3. Limpa imagens Docker não utilizadas (dangling images) para economizar espaço
+                // Usando caminho completo
+                sh '/usr/bin/docker-compose -f docker-compose.yml down'
+                sh '/usr/bin/docker-compose -f docker-compose.yml up -d --build'
                 sh 'docker image prune -f'
-
                 sh 'echo "Deploy finalizado!"'
             }
         }
+    }
     }
 
     post {
