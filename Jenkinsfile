@@ -18,7 +18,7 @@ pipeline {
                 sh 'echo "Executando testes (ex: pytest)..."'
                 // Exemplo: sh 'pytest'
                 // Se os testes precisarem rodar dentro do ambiente Docker:
-                // sh 'docker-compose -f docker-compose.yml run --rm app pytest'
+                // sh '/usr/bin/docker-compose -f docker-compose.yml run --rm app pytest'
             }
         }
 
@@ -26,17 +26,16 @@ pipeline {
         stage('Build & Deploy') {
             steps {
                 sh 'echo "Iniciando build e deploy..."'
-                // Usando caminho completo
+                // Usando caminho completo (ajustado para /usr/bin)
                 sh '/usr/bin/docker-compose -f docker-compose.yml down'
                 sh '/usr/bin/docker-compose -f docker-compose.yml up -d --build'
                 sh 'docker image prune -f'
                 sh 'echo "Deploy finalizado!"'
             }
         }
-    }
-    }
+    } // <- Fim do bloco 'stages'. A chave extra foi removida daqui.
 
-    post {
+    post { // <- Bloco 'post' vem logo após o fim do 'stages'
         success {
             echo 'Pipeline concluído com sucesso!'
             // Ex: Enviar notificação
