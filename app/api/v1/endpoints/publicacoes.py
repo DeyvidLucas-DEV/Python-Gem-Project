@@ -56,7 +56,7 @@ async def read_publicacoes(
             db,
             skip=pagination.skip,
             limit=pagination.limit,
-            load_relations=True
+            load_relations=["autores", "subgrupos"]
         )
 
     return {
@@ -98,7 +98,7 @@ async def create_publicacao(
     publicacao = await crud.publicacao.create_with_relations(db, obj_in=publicacao_in)
 
     # Recarregar com relacionamentos
-    publicacao_with_relations = await crud.publicacao.get(db, id=publicacao.id, load_relations=True)
+    publicacao_with_relations = await crud.publicacao.get(db, id=publicacao.id, load_relations=["autores", "subgrupos"])
     return schemas.PublicacaoWithRelations.model_validate(publicacao_with_relations)
 
 
@@ -111,7 +111,7 @@ async def read_publicacao(
     """
     Obter publicação por ID.
     """
-    publicacao = await crud.publicacao.get(db, id=id, load_relations=True)
+    publicacao = await crud.publicacao.get(db, id=id, load_relations=["autores", "subgrupos"])
     if not publicacao:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -164,7 +164,7 @@ async def update_publicacao(
     )
 
     # Recarregar com relacionamentos
-    publicacao_with_relations = await crud.publicacao.get(db, id=publicacao.id, load_relations=True)
+    publicacao_with_relations = await crud.publicacao.get(db, id=publicacao.id, load_relations=["autores", "subgrupos"])
     return schemas.PublicacaoWithRelations.model_validate(publicacao_with_relations)
 
 
@@ -275,13 +275,13 @@ async def get_estatisticas_publicacoes(
     """
     Obter estatísticas das publicações.
     """
-    # Total de publicações
-    all_pubs, total = await crud.publicacao.get_multi(db, skip=0, limit=1)
+    # Total de publicações (agora 1 query rápida)
+    total = await crud.publicacao.get_count(db)
 
-    # Publicações por tipo
+    # Publicações por tipo (agora 1 query rápida por tipo)
     stats_por_tipo = {}
     for tipo in TipoPublicacaoEnum:
-        pubs_tipo, count = await crud.publicacao.get_by_tipo(db, tipo=tipo, skip=0, limit=1)
+        count = await crud.publicacao.get_count(db, filters={"type": tipo})
         stats_por_tipo[tipo.value] = count
 
     return {

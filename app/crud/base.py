@@ -4,6 +4,7 @@ from sqlalchemy import select, update, delete, func
 from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from fastapi import HTTPException, status
+import enum  # Necessário para a checagem de filtro
 
 from app.core.database import Base
 
@@ -18,7 +19,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def __init__(self, model: Type[ModelType]):
         """
         CRUD object com modelo SQLAlchemy.
-
         **Parâmetros**
         * `model`: Classe do modelo SQLAlchemy
         """
@@ -29,18 +29,45 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db: AsyncSession,
             id: Any,
             *,
-            load_relations: bool = False
+            load_relations: Optional[List[str]] = None
     ) -> Optional[ModelType]:
         """Buscar um registro por ID."""
         query = select(self.model).where(self.model.id == id)
 
         if load_relations:
-            # Carrega relacionamentos automaticamente
-            for relationship in self.model.__mapper__.relationships:
-                query = query.options(selectinload(getattr(self.model, relationship.key)))
+            # Agora carrega apenas os relacionamentos pedidos
+            for relation_name in load_relations:
+                if hasattr(self.model, relation_name):
+                    query = query.options(selectinload(getattr(self.model, relation_name)))
 
         result = await db.execute(query)
         return result.scalar_one_or_none()
+
+    async def get_count(
+            self,
+            db: AsyncSession,
+            *,
+            filters: Optional[Dict[str, Any]] = None
+    ) -> int:
+        """Retorna apenas a contagem total de objetos, com filtros."""
+        count_query = select(func.count(self.model.id))
+
+        if filters:
+            for field, value in filters.items():
+                if hasattr(self.model, field) and value is not None:
+
+                    # --- CORREÇÃO DO BUG AQUI ---
+                    # A variável deve ser 'count_query', não 'query'
+                    if isinstance(value, str):
+                        count_query = count_query.where(getattr(self.model, field).ilike(f"%{value}%"))
+                    elif isinstance(value, enum.Enum):
+                        count_query = count_query.where(getattr(self.model, field) == value.value)
+                    else:
+                        count_query = count_query.where(getattr(self.model, field) == value)
+
+        count_result = await db.execute(count_query)
+        total = count_result.scalar_one()
+        return total
 
     async def get_multi(
             self,
@@ -49,42 +76,41 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             skip: int = 0,
             limit: int = 100,
             filters: Optional[Dict[str, Any]] = None,
-            load_relations: bool = False
+            # --- CORREÇÃO DA ASSINATURA AQUI ---
+            load_relations: Optional[List[str]] = None
     ) -> tuple[List[ModelType], int]:
         """
         Buscar múltiplos registros com paginação e filtros.
-
         Retorna: (registros, total_count)
         """
         query = select(self.model)
         count_query = select(func.count(self.model.id))
 
-        # Aplicar filtros
         if filters:
             for field, value in filters.items():
                 if hasattr(self.model, field) and value is not None:
                     if isinstance(value, str):
-                        # Busca parcial para strings
                         query = query.where(getattr(self.model, field).ilike(f"%{value}%"))
                         count_query = count_query.where(getattr(self.model, field).ilike(f"%{value}%"))
+                    elif isinstance(value, enum.Enum):
+                        query = query.where(getattr(self.model, field) == value.value)
+                        count_query = count_query.where(getattr(self.model, field) == value.value)
                     else:
                         query = query.where(getattr(self.model, field) == value)
                         count_query = count_query.where(getattr(self.model, field) == value)
 
-        # Carregar relacionamentos se solicitado
         if load_relations:
-            for relationship in self.model.__mapper__.relationships:
-                query = query.options(selectinload(getattr(self.model, relationship.key)))
+            for relation_name in load_relations:
+                if hasattr(self.model, relation_name):
+                    query = query.options(selectinload(getattr(self.model, relation_name)))
 
-        # Aplicar paginação
         query = query.offset(skip).limit(limit).order_by(self.model.id)
 
-        # Executar queries
         result = await db.execute(query)
         count_result = await db.execute(count_query)
 
         items = result.scalars().all()
-        total = count_result.scalar()
+        total = count_result.scalar_one()
 
         return list(items), total
 

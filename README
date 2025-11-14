@@ -8,5 +8,4 @@ requirements:
 python3 -m pip install -r requirements.txt
 
 iniciar projeto:
-
 uvicorn main:app --reload

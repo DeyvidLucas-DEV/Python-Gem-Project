@@ -1,7 +1,7 @@
-from sqlalchemy import String, Text, LargeBinary, Enum, TIMESTAMP
+from sqlalchemy import String, Text, LargeBinary, Enum, TIMESTAMP, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import Optional, TYPE_CHECKING
-from datetime import datetime
+from datetime import datetime, date
 import enum
 
 from .base import Base, TimestampMixin
@@ -11,15 +11,14 @@ if TYPE_CHECKING:
     from .subgrupo import Subgrupo
 
 
-class TipoPublicacaoEnum(enum.Enum):
-    """Enum para tipos de publicação."""
+class TipoPublicacaoEnum(str, enum.Enum):
     MATERIA = "materia"
     DISSERTACAO = "dissertacao"
     LIVRO = "livro"
     TESE = "tese"
     CAPITULO_LIVRO = "capitulo_livro"
     POLICY_BRIEF = "policy_brief"
-    ARTIGO = "Artigo"
+    ARTIGO = "Artigo" # <-- mude para minúsculo
 
 
 class Publicacao(Base, TimestampMixin):
@@ -32,10 +31,10 @@ class Publicacao(Base, TimestampMixin):
     description: Mapped[Optional[str]] = mapped_column(Text)
     image: Mapped[Optional[bytes]] = mapped_column(LargeBinary)
     type: Mapped[TipoPublicacaoEnum] = mapped_column(
-        Enum(TipoPublicacaoEnum, name="tipo_publicacao_enum"),
+        Enum(TipoPublicacaoEnum, name="tipo_publicacao_enum", native_enum=True),  # <-- Correto
         nullable=False
     )
-    year: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP)
+    year: Mapped[Optional[date]] = mapped_column(Date)
 
     # Relacionamentos Many-to-Many
     autores: Mapped[list["Membro"]] = relationship(

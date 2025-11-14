@@ -34,7 +34,7 @@ async def read_subgrupos(
             db,
             skip=pagination.skip,
             limit=pagination.limit,
-            load_relations=True
+            load_relations=["membros", "publicacoes"]
         )
 
     return {
@@ -76,7 +76,7 @@ async def read_subgrupo(
     """
     Obter subgrupo por ID.
     """
-    subgrupo = await crud.subgrupo.get(db, id=id, load_relations=True)
+    subgrupo = await crud.subgrupo.get(db, id=id, load_relations=["membros", "publicacoes"])
     if not subgrupo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

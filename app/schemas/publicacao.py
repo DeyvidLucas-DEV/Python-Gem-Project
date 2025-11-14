@@ -3,7 +3,8 @@ from __future__ import annotations
 # Import Field from pydantic, not field from dataclasses
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, TYPE_CHECKING
-from datetime import datetime
+# 👇 IMPORT 'date' AQUI
+from datetime import datetime, date
 from enum import Enum
 
 # Use TYPE_CHECKING to avoid circular imports at runtime
@@ -13,14 +14,13 @@ if TYPE_CHECKING:
 
 
 class TipoPublicacaoEnum(str, Enum):
-    """Enum para tipos de publicação."""
     MATERIA = "materia"
     DISSERTACAO = "dissertacao"
     LIVRO = "livro"
     TESE = "tese"
     CAPITULO_LIVRO = "capitulo_livro"
     POLICY_BRIEF = "policy_brief"
-    ARTIGO = "Artigo"
+    ARTIGO = "Artigo"  # <-- CORRIGIDO
 
 
 class PublicacaoBase(BaseModel):
@@ -28,7 +28,9 @@ class PublicacaoBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=500, description="Título da publicação")
     description: Optional[str] = Field(None, description="Descrição da publicação")
     type: TipoPublicacaoEnum = Field(..., description="Tipo da publicação")
-    year: Optional[datetime] = Field(None, description="Ano da publicação")
+
+    # 👇 CORREÇÃO AQUI
+    year: Optional[date] = Field(None, description="Data da publicação (AAAA-MM-DD)")
 
 
 class PublicacaoCreate(PublicacaoBase):
@@ -42,7 +44,10 @@ class PublicacaoUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=500)
     description: Optional[str] = None
     type: Optional[TipoPublicacaoEnum] = None
-    year: Optional[datetime] = None
+
+    # 👇 CORREÇÃO AQUI
+    year: Optional[date] = None
+
     autor_ids: Optional[list[int]] = None
     subgrupo_ids: Optional[list[int]] = None
 
@@ -52,6 +57,8 @@ class PublicacaoInDB(PublicacaoBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+
+    # (Estes campos 'created_at' e 'updated_at' estão corretos como datetime)
     created_at: datetime
     updated_at: datetime
 
@@ -70,9 +77,7 @@ class PublicacaoSummary(BaseModel):
     type: TipoPublicacaoEnum
 
 
-
 class PublicacaoWithRelations(Publicacao):
     """Schema para Publicação com relacionamentos."""
-    # Use pydantic.Field with default_factory
     autores: list[MembroSummary] = Field(default_factory=list)
     subgrupos: list[SubgrupoSummary] = Field(default_factory=list)

@@ -37,7 +37,7 @@ async def read_membros(
             db,
             skip=pagination.skip,
             limit=pagination.limit,
-            load_relations=True
+            load_relations=["subgrupos", "publicacoes"]
         )
 
     return {
@@ -71,7 +71,7 @@ async def read_membro(
     """
     Obter membro por ID.
     """
-    membro = await crud.membro.get(db, id=id, load_relations=True)
+    membro = await crud.membro.get(db, id=id, load_relations=["subgrupos", "publicacoes"])
     if not membro:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
