@@ -1,7 +1,11 @@
 // Jenkinsfile
 pipeline {
     agent any// <<< ALTERADO: Tenta forçar a execução no nó principal
-
+    
+    triggers {
+            pollSCM('* * * * *') // Verifica por mudanças a cada minuto
+        }
+    
     stages {
         // Fase 1: Baixar o código do GitHub
         stage('Checkout') {
