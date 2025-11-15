@@ -12,7 +12,6 @@ from app.utils.exceptions import (
     general_exception_handler
 )
 
-
 # Configurar logging
 logging.basicConfig(
     level=logging.INFO,
