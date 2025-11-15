@@ -1,6 +1,6 @@
 // Jenkinsfile
 pipeline {
-    agent { label 'main' } // <<< ALTERADO: Tenta forçar a execução no nó principal
+    agent any// <<< ALTERADO: Tenta forçar a execução no nó principal
 
     stages {
         // Fase 1: Baixar o código do GitHub
