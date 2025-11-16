@@ -146,8 +146,10 @@ pipeline {
                     # Aguardar a aplicação iniciar
                     sleep 10
 
-                    # Health check (opcional)
-                    # curl -f http://localhost:8000/health || exit 1
+                    # Health check
+                    echo "Verificando saúde da aplicação..."
+                    curl -f http://localhost:8000/health || exit 1
+                    echo "✓ Health check passou!"
                 '''
                 echo 'Deploy finalizado com sucesso!'
             }
