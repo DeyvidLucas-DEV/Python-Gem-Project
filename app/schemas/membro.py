@@ -14,7 +14,8 @@ if TYPE_CHECKING:
 class MembroBase(BaseModel):
     """Schema base para Membro."""
     nome: str = Field(..., min_length=1, max_length=255, description="Nome do membro")
-    email: Optional[str] = Field(None, description="Email do membro")
+    descricao: Optional[str] = Field(None, description="Descrição do membro")
+    experiencia: Optional[str] = Field(None, description="Experiência do membro")
 
 
 class MembroCreate(MembroBase):
@@ -25,7 +26,8 @@ class MembroCreate(MembroBase):
 class MembroUpdate(BaseModel):
     """Schema para atualização de Membro."""
     nome: Optional[str] = Field(None, min_length=1, max_length=255)
-    email: Optional[str] = None
+    descricao: Optional[str] = None
+    experiencia: Optional[str] = None
 
 
 class MembroInDB(MembroBase):

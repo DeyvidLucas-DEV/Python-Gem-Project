@@ -61,7 +61,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                     if isinstance(value, str):
                         count_query = count_query.where(getattr(self.model, field).ilike(f"%{value}%"))
                     elif isinstance(value, enum.Enum):
-                        count_query = count_query.where(getattr(self.model, field) == value.value)
+                        # Para enums nativos, comparar com o enum diretamente
+                        count_query = count_query.where(getattr(self.model, field) == value)
                     else:
                         count_query = count_query.where(getattr(self.model, field) == value)
 
@@ -93,8 +94,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                         query = query.where(getattr(self.model, field).ilike(f"%{value}%"))
                         count_query = count_query.where(getattr(self.model, field).ilike(f"%{value}%"))
                     elif isinstance(value, enum.Enum):
-                        query = query.where(getattr(self.model, field) == value.value)
-                        count_query = count_query.where(getattr(self.model, field) == value.value)
+                        # Para enums nativos, comparar com o enum diretamente
+                        query = query.where(getattr(self.model, field) == value)
+                        count_query = count_query.where(getattr(self.model, field) == value)
                     else:
                         query = query.where(getattr(self.model, field) == value)
                         count_query = count_query.where(getattr(self.model, field) == value)

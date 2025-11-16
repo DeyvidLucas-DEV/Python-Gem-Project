@@ -33,7 +33,7 @@ class CRUDMembro(CRUDBase[Membro, MembroCreate, MembroUpdate]):
             skip=skip,
             limit=limit,
             filters=filters,
-            load_relations=True
+            load_relations=["subgrupos", "publicacoes"]
         )
 
     async def get_subgrupos(

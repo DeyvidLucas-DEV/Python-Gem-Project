@@ -31,7 +31,7 @@ class Publicacao(Base, TimestampMixin):
     description: Mapped[Optional[str]] = mapped_column(Text)
     image: Mapped[Optional[bytes]] = mapped_column(LargeBinary)
     type: Mapped[TipoPublicacaoEnum] = mapped_column(
-        Enum(TipoPublicacaoEnum, name="tipo_publicacao_enum", native_enum=True),  # <-- Correto
+        Enum(TipoPublicacaoEnum, name="tipo_publicacao_enum", native_enum=False, values_callable=lambda x: [e.value for e in x]),
         nullable=False
     )
     year: Mapped[Optional[date]] = mapped_column(Date)
