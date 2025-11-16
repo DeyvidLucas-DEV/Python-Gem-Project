@@ -143,13 +143,24 @@ pipeline {
                     # Limpar imagens antigas
                     docker image prune -f
 
-                    # Aguardar a aplicação iniciar
-                    sleep 10
-
-                    # Health check
+                    # Health check com retry via Nginx (porta 80)
                     echo "Verificando saúde da aplicação..."
-                    curl -f http://localhost:8000/health || exit 1
-                    echo "✓ Health check passou!"
+                    for i in {1..30}; do
+                        if curl -f http://localhost/health > /dev/null 2>&1; then
+                            echo "✓ Health check passou! Aplicação está saudável."
+                            break
+                        else
+                            echo "Tentativa $i/30: Aplicação ainda não está pronta..."
+                            sleep 2
+                        fi
+
+                        if [ $i -eq 30 ]; then
+                            echo "✗ Health check falhou após 30 tentativas (60 segundos)"
+                            curl -v http://localhost/health || true
+                            docker-compose logs app
+                            exit 1
+                        fi
+                    done
                 '''
                 echo 'Deploy finalizado com sucesso!'
             }
