@@ -165,23 +165,29 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline concluído com sucesso!'
-            echo 'Testes: PASSOU ✓'
-            echo 'Deploy: COMPLETO ✓'
-            // Adicionar notificação (Slack, Email, etc.)
+            node('any') {
+                echo '✅ Pipeline concluído com sucesso!'
+                echo 'Testes: PASSOU ✓'
+                echo 'Deploy: COMPLETO ✓'
+                // Adicionar notificação (Slack, Email, etc.)
+            }
         }
         failure {
-            echo '❌ Pipeline falhou!'
-            echo 'Verifique os logs para detalhes do erro.'
-            // Adicionar notificação de erro
+            node('any') {
+                echo '❌ Pipeline falhou!'
+                echo 'Verifique os logs para detalhes do erro.'
+                // Adicionar notificação de erro
+            }
         }
         always {
-            // Limpar ambiente virtual para economizar espaço
-            sh 'rm -rf ${VENV_PATH} || true'
+            node('any') {
+                // Limpar ambiente virtual para economizar espaço
+                sh 'rm -rf ${VENV_PATH} || true'
 
-            // Arquivar artefatos importantes
-            archiveArtifacts artifacts: 'test-results.xml', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'htmlcov/**/*', allowEmptyArchive: true
+                // Arquivar artefatos importantes
+                archiveArtifacts artifacts: 'test-results.xml', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'htmlcov/**/*', allowEmptyArchive: true
+            }
         }
     }
 }
