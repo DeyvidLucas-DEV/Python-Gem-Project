@@ -1,6 +1,6 @@
 // Jenkinsfile
 pipeline {
-    agent any
+    agent none  // Definir agent por stage
 
     triggers {
         pollSCM('* * * * *') // Verifica por mudanças a cada minuto
@@ -15,6 +15,7 @@ pipeline {
     stages {
         // Fase 1: Baixar o código do GitHub
         stage('Checkout') {
+            agent any
             steps {
                 cleanWs() // Limpa o workspace antes de baixar
                 echo 'Baixando código do repositório...'
@@ -26,6 +27,12 @@ pipeline {
 
         // Fase 2: Configurar ambiente de testes
         stage('Setup') {
+            agent {
+                docker {
+                    image 'python:3.12-slim'
+                    reuseNode true
+                }
+            }
             steps {
                 echo 'Configurando ambiente virtual Python...'
                 sh '''
@@ -42,6 +49,12 @@ pipeline {
 
         // Fase 3: Executar testes
         stage('Test') {
+            agent {
+                docker {
+                    image 'python:3.12-slim'
+                    reuseNode true
+                }
+            }
             steps {
                 echo 'Executando testes automatizados...'
                 sh '''
@@ -79,6 +92,12 @@ pipeline {
 
         // Fase 4: Lint e Qualidade de Código (Opcional)
         stage('Code Quality') {
+            agent {
+                docker {
+                    image 'python:3.12-slim'
+                    reuseNode true
+                }
+            }
             steps {
                 echo 'Verificando qualidade do código...'
                 sh '''
@@ -95,6 +114,7 @@ pipeline {
 
         // Fase 5: Build da imagem Docker
         stage('Build') {
+            agent any
             steps {
                 echo 'Construindo imagem Docker...'
                 sh '''
@@ -106,6 +126,7 @@ pipeline {
 
         // Fase 6: Deploy (só executa se os testes passarem)
         stage('Deploy') {
+            agent any
             when {
                 // Só faz deploy se todas as etapas anteriores passarem
                 expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
