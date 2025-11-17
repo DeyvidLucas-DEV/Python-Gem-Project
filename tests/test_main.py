@@ -109,5 +109,7 @@ async def test_health_ui(client: AsyncClient):
     content = response.text
     assert "<!DOCTYPE html>" in content
     assert "<html" in content
-    assert "Sistema de Monitoramento" in content
+    assert "Dashboard de Monitoramento" in content
     assert "fetchHealthData" in content  # Verificar se tem a função JavaScript
+    assert "Chart.js" in content  # Verificar se tem Chart.js
+    assert "chart-card" in content  # Verificar se tem os cards de gráfico
