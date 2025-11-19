@@ -7,8 +7,8 @@ from app.core.security import (
     create_access_token,
     get_password_hash,
     verify_password,
-    ACCESS_TOKEN_EXPIRE_MINUTES,
 )
+from app.core.config import settings
 from app.crud.user import user as user_crud
 from app.schemas.auth import Token, LoginRequest
 from app.schemas.user import User, UserCreate
@@ -84,9 +84,9 @@ async def login(
         )
 
     # Criar token
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.id}, expires_delta=access_token_expires
+        data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
 
     return {"access_token": access_token, "token_type": "bearer"}
