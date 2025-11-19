@@ -66,13 +66,18 @@ pipeline {
                         --cov-report=term-missing \
                         --cov-report=xml \
                         --cov-report=html \
-                        --junitxml=test-results.xml
+                        --junitxml=test-results.xml || exit 1
+
+                    # Verificar se o arquivo foi criado
+                    echo "Verificando arquivos de teste..."
+                    ls -la test-results.xml || echo "AVISO: test-results.xml não encontrado!"
+                    ls -la htmlcov/ || echo "AVISO: htmlcov/ não encontrado!"
                 '''
             }
             post {
                 always {
-                    // Publica os resultados dos testes
-                    junit 'test-results.xml'
+                    // Publica os resultados dos testes (permite arquivo vazio se houver erro)
+                    junit allowEmptyResults: true, testResults: 'test-results.xml'
 
                     // Publica relatório de cobertura (se tiver o plugin)
                     // publishHTML([
