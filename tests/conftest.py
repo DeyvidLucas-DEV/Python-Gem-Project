@@ -52,9 +52,46 @@ async def db() -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest_asyncio.fixture(scope="function")
+async def test_user(db: AsyncSession):
+    """
+    Cria um usuário de teste no banco de dados.
+    """
+    from app.models.user import User
+    from app.core.security import get_password_hash
+
+    user = User(
+        email="test@example.com",
+        username="testuser",
+        hashed_password=get_password_hash("testpassword"),
+        full_name="Test User",
+        is_active=True,
+        is_superuser=False
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+@pytest_asyncio.fixture(scope="function")
+async def auth_token(test_user):
+    """
+    Gera um token JWT válido para o usuário de teste.
+    """
+    from app.core.security import create_access_token
+    from datetime import timedelta
+
+    access_token = create_access_token(
+        data={"sub": test_user.id},
+        expires_delta=timedelta(minutes=30)
+    )
+    return access_token
+
+
+@pytest_asyncio.fixture(scope="function")
 async def client(db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """
-    Fixture do cliente de teste (AsyncClient).
+    Fixture do cliente de teste (AsyncClient) SEM autenticação.
 
     - Substitui a dependência 'get_db_session' pela sessão de teste.
     """
@@ -70,3 +107,38 @@ async def client(db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
+
+
+@pytest_asyncio.fixture(scope="function")
+async def auth_client(db: AsyncSession, test_user, auth_token) -> AsyncGenerator[AsyncClient, None]:
+    """
+    Fixture do cliente de teste (AsyncClient) COM autenticação.
+
+    - Substitui a dependência 'get_db_session' pela sessão de teste.
+    - Substitui a dependência 'get_current_active_user' para retornar o test_user.
+    - Inclui o token de autenticação no header de todas as requisições.
+    """
+
+    # Define a função de override da dependência de DB
+    async def override_get_db_session() -> AsyncGenerator[AsyncSession, None]:
+        yield db
+
+    # Define override da autenticação para retornar diretamente o test_user
+    async def override_get_current_active_user():
+        return test_user
+
+    # Aplica os overrides no app FastAPI
+    app.dependency_overrides[deps.get_db_session] = override_get_db_session
+    app.dependency_overrides[deps.get_current_active_user] = override_get_current_active_user
+
+    # Fornece o cliente com headers de autenticação
+    transport = ASGITransport(app=app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"Authorization": f"Bearer {auth_token}"}
+    ) as c:
+        yield c
+
+    # Limpa os overrides após o teste
+    app.dependency_overrides.clear()

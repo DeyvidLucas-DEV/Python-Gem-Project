@@ -97,12 +97,12 @@ async def test_read_membros_pagination(client: AsyncClient, db: AsyncSession):
     assert result["has_next"] is True
 
 
-async def test_create_membro(client: AsyncClient):
+async def test_create_membro(auth_client: AsyncClient):
     """Testa POST / (Criar Membro)"""
     data = {
         "nome": "Maria Santos"
     }
-    response = await client.post(f"{API_PREFIX}/", json=data)
+    response = await auth_client.post(f"{API_PREFIX}/", json=data)
 
     assert response.status_code == status.HTTP_201_CREATED
 
@@ -111,13 +111,13 @@ async def test_create_membro(client: AsyncClient):
     assert "id" in result
 
 
-async def test_create_membro_with_description(client: AsyncClient):
+async def test_create_membro_with_description(auth_client: AsyncClient):
     """Testa POST / (Criar Membro com descrição)"""
     data = {
         "nome": "Pedro Oliveira",
         "descricao": "Pesquisador júnior"
     }
-    response = await client.post(f"{API_PREFIX}/", json=data)
+    response = await auth_client.post(f"{API_PREFIX}/", json=data)
 
     assert response.status_code == status.HTTP_201_CREATED
 
@@ -141,7 +141,7 @@ async def test_read_membro_not_found(client: AsyncClient):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-async def test_update_membro(client: AsyncClient, membro_fix: Membro):
+async def test_update_membro(auth_client: AsyncClient, membro_fix: Membro):
     """Testa PUT /{id} (Atualizar Membro)"""
     new_nome = "João Silva Atualizado"
     data = {
@@ -149,7 +149,7 @@ async def test_update_membro(client: AsyncClient, membro_fix: Membro):
         "descricao": "Descrição atualizada"
     }
 
-    response = await client.put(f"{API_PREFIX}/{membro_fix.id}", json=data)
+    response = await auth_client.put(f"{API_PREFIX}/{membro_fix.id}", json=data)
     assert response.status_code == status.HTTP_200_OK
 
     result = response.json()
@@ -157,13 +157,13 @@ async def test_update_membro(client: AsyncClient, membro_fix: Membro):
     assert result["id"] == membro_fix.id
 
 
-async def test_update_membro_partial(client: AsyncClient, membro_fix: Membro):
+async def test_update_membro_partial(auth_client: AsyncClient, membro_fix: Membro):
     """Testa PUT /{id} (Atualização parcial)"""
     data = {
         "nome": "Novo Nome"
     }
 
-    response = await client.put(f"{API_PREFIX}/{membro_fix.id}", json=data)
+    response = await auth_client.put(f"{API_PREFIX}/{membro_fix.id}", json=data)
     assert response.status_code == status.HTTP_200_OK
 
     result = response.json()
@@ -172,14 +172,14 @@ async def test_update_membro_partial(client: AsyncClient, membro_fix: Membro):
     assert result["descricao"] == membro_fix.descricao
 
 
-async def test_delete_membro(client: AsyncClient, db: AsyncSession, membro_fix: Membro):
+async def test_delete_membro(auth_client: AsyncClient, db: AsyncSession, membro_fix: Membro):
     """Testa DELETE /{id} (Deletar Membro)"""
     # Deleta
-    response_del = await client.delete(f"{API_PREFIX}/{membro_fix.id}")
+    response_del = await auth_client.delete(f"{API_PREFIX}/{membro_fix.id}")
     assert response_del.status_code == status.HTTP_204_NO_CONTENT
 
     # Verifica se foi deletado
-    response_get = await client.get(f"{API_PREFIX}/{membro_fix.id}")
+    response_get = await auth_client.get(f"{API_PREFIX}/{membro_fix.id}")
     assert response_get.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -208,14 +208,14 @@ async def test_get_membro_publicacoes(
     assert result[0]["title"] == "Publicação do Membro"
 
 
-async def test_upload_foto_membro(client: AsyncClient, membro_fix: Membro):
+async def test_upload_foto_membro(auth_client: AsyncClient, membro_fix: Membro):
     """Testa POST /{id}/upload-foto"""
     # Cria um arquivo falso em memória
     fake_image = io.BytesIO(b"fakeimagedatafortest")
 
     files = {"file": ("foto.jpg", fake_image, "image/jpeg")}
 
-    response = await client.post(
+    response = await auth_client.post(
         f"{API_PREFIX}/{membro_fix.id}/upload-foto", files=files
     )
 
@@ -223,26 +223,26 @@ async def test_upload_foto_membro(client: AsyncClient, membro_fix: Membro):
     assert response.json() == {"message": "Foto atualizada com sucesso"}
 
 
-async def test_upload_foto_invalid_type(client: AsyncClient, membro_fix: Membro):
+async def test_upload_foto_invalid_type(auth_client: AsyncClient, membro_fix: Membro):
     """Testa POST /{id}/upload-foto com tipo de arquivo inválido"""
     fake_file = io.BytesIO(b"notanimagefile")
 
     files = {"file": ("document.pdf", fake_file, "application/pdf")}
 
-    response = await client.post(
+    response = await auth_client.post(
         f"{API_PREFIX}/{membro_fix.id}/upload-foto", files=files
     )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
-async def test_upload_background_membro(client: AsyncClient, membro_fix: Membro):
+async def test_upload_background_membro(auth_client: AsyncClient, membro_fix: Membro):
     """Testa POST /{id}/upload-background"""
     fake_image = io.BytesIO(b"fakebackgrounddata")
 
     files = {"file": ("background.jpg", fake_image, "image/jpeg")}
 
-    response = await client.post(
+    response = await auth_client.post(
         f"{API_PREFIX}/{membro_fix.id}/upload-background", files=files
     )
 

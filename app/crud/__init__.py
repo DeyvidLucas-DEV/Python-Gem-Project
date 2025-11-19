@@ -8,3 +8,6 @@ from .publicacao import publicacao
 
 # Importa o objeto 'subgrupo' do arquivo crud_subgrupo.py
 from .subgrupo import subgrupo
+
+# Importa o objeto 'user' do arquivo user.py
+from .user import user

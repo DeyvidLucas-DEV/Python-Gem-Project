@@ -1,8 +1,15 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import subgrupos, membros, publicacoes
+from app.api.v1.endpoints import subgrupos, membros, publicacoes, auth
 
 api_router = APIRouter()
+
+# Rotas de autenticação (sem prefixo adicional)
+api_router.include_router(
+    auth.router,
+    prefix="/auth",
+    tags=["autenticação"]
+)
 
 api_router.include_router(
     subgrupos.router,

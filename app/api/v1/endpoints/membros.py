@@ -54,9 +54,11 @@ async def create_membro(
         *,
         db: AsyncSession = Depends(deps.get_db_session),
         membro_in: schemas.MembroCreate,
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> Any:
     """
     Criar novo membro.
+    Requer autenticação.
     """
     membro = await crud.membro.create(db, obj_in=membro_in)
     return schemas.Membro.model_validate(membro)
@@ -86,9 +88,11 @@ async def update_membro(
         db: AsyncSession = Depends(deps.get_db_session),
         id: int,
         membro_in: schemas.MembroUpdate,
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> Any:
     """
     Atualizar membro.
+    Requer autenticação.
     """
     membro = await crud.membro.get(db, id=id)
     if not membro:
@@ -106,9 +110,11 @@ async def delete_membro(
         *,
         db: AsyncSession = Depends(deps.get_db_session),
         id: int,
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> None:
     """
     Deletar membro.
+    Requer autenticação.
     """
     membro = await crud.membro.get(db, id=id)
     if not membro:
@@ -166,9 +172,11 @@ async def upload_foto_membro(
         db: AsyncSession = Depends(deps.get_db_session),
         id: int,
         file: UploadFile = File(...),
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> dict:
     """
     Upload da foto do membro.
+    Requer autenticação.
     """
     membro = await crud.membro.get(db, id=id)
     if not membro:
@@ -203,9 +211,11 @@ async def upload_background_membro(
         db: AsyncSession = Depends(deps.get_db_session),
         id: int,
         file: UploadFile = File(...),
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> dict:
     """
     Upload do background do membro.
+    Requer autenticação.
     """
     membro = await crud.membro.get(db, id=id)
     if not membro:

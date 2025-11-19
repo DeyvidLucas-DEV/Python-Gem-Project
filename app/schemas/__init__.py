@@ -26,6 +26,18 @@ from .subgrupo import (
     SubgrupoSummary,
     SubgrupoWithRelations,
 )
+from .user import (
+    UserBase,
+    UserCreate,
+    UserUpdate,
+    User,
+    UserInDB,
+)
+from .auth import (
+    Token,
+    TokenPayload,
+    LoginRequest,
+)
 
 __all__ = [
     # Membro
@@ -53,6 +65,16 @@ __all__ = [
     "Subgrupo",
     "SubgrupoSummary",
     "SubgrupoWithRelations",
+    # User
+    "UserBase",
+    "UserCreate",
+    "UserUpdate",
+    "User",
+    "UserInDB",
+    # Auth
+    "Token",
+    "TokenPayload",
+    "LoginRequest",
 ]
 
 MembroWithRelations.model_rebuild()

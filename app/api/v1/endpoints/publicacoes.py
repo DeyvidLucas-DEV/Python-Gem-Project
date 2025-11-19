@@ -73,9 +73,11 @@ async def create_publicacao(
         *,
         db: AsyncSession = Depends(deps.get_db_session),
         publicacao_in: schemas.PublicacaoCreate,
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> Any:
     """
     Criar nova publicação com autores e subgrupos.
+    Requer autenticação.
     """
     # Validar se autores existem
     for autor_id in publicacao_in.autor_ids:
@@ -126,9 +128,11 @@ async def update_publicacao(
         db: AsyncSession = Depends(deps.get_db_session),
         id: int,
         publicacao_in: schemas.PublicacaoUpdate,
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> Any:
     """
     Atualizar publicação.
+    Requer autenticação.
     """
     publicacao = await crud.publicacao.get(db, id=id)
     if not publicacao:
@@ -173,9 +177,11 @@ async def delete_publicacao(
         *,
         db: AsyncSession = Depends(deps.get_db_session),
         id: int,
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> None:
     """
     Deletar publicação.
+    Requer autenticação.
     """
     publicacao = await crud.publicacao.get(db, id=id)
     if not publicacao:
@@ -236,9 +242,11 @@ async def upload_image_publicacao(
         db: AsyncSession = Depends(deps.get_db_session),
         id: int,
         file: UploadFile = File(...),
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> dict:
     """
     Upload da imagem da publicação.
+    Requer autenticação.
     """
     publicacao = await crud.publicacao.get(db, id=id)
     if not publicacao:

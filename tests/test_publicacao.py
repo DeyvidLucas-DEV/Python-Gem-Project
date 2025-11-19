@@ -62,7 +62,7 @@ async def publicacao_fix(
 # --- Testes dos Endpoints ---
 
 async def test_create_publicacao(
-        client: AsyncClient, db: AsyncSession, autor_fix: Membro, subgrupo_fix: Subgrupo
+        auth_client: AsyncClient, db: AsyncSession, autor_fix: Membro, subgrupo_fix: Subgrupo
 ):
     """Testa POST / (Criar Publicação)"""
     data = {
@@ -73,7 +73,7 @@ async def test_create_publicacao(
         "autor_ids": [autor_fix.id],
         "subgrupo_ids": [subgrupo_fix.id],
     }
-    response = await client.post(f"{API_PREFIX}/", json=data)
+    response = await auth_client.post(f"{API_PREFIX}/", json=data)
 
     assert response.status_code == status.HTTP_201_CREATED
 
@@ -85,7 +85,7 @@ async def test_create_publicacao(
 
 
 async def test_create_publicacao_tipo_materia(
-        client: AsyncClient, db: AsyncSession, autor_fix: Membro, subgrupo_fix: Subgrupo
+        auth_client: AsyncClient, db: AsyncSession, autor_fix: Membro, subgrupo_fix: Subgrupo
 ):
     """Testa POST / com type='materia' - caso que estava falhando"""
     data = {
@@ -96,7 +96,7 @@ async def test_create_publicacao_tipo_materia(
         "autor_ids": [autor_fix.id],
         "subgrupo_ids": [subgrupo_fix.id],
     }
-    response = await client.post(f"{API_PREFIX}/", json=data)
+    response = await auth_client.post(f"{API_PREFIX}/", json=data)
 
     assert response.status_code == status.HTTP_201_CREATED
 
@@ -117,7 +117,7 @@ async def test_create_publicacao_tipo_materia(
     "Artigo"
 ])
 async def test_create_publicacao_all_enum_types(
-        client: AsyncClient, db: AsyncSession, autor_fix: Membro, subgrupo_fix: Subgrupo, tipo_enum: str
+        auth_client: AsyncClient, db: AsyncSession, autor_fix: Membro, subgrupo_fix: Subgrupo, tipo_enum: str
 ):
     """Testa criação de publicação com todos os valores possíveis do enum"""
     data = {
@@ -128,7 +128,7 @@ async def test_create_publicacao_all_enum_types(
         "autor_ids": [autor_fix.id],
         "subgrupo_ids": [subgrupo_fix.id],
     }
-    response = await client.post(f"{API_PREFIX}/", json=data)
+    response = await auth_client.post(f"{API_PREFIX}/", json=data)
 
     assert response.status_code == status.HTTP_201_CREATED, f"Falhou para tipo '{tipo_enum}': {response.text}"
 
@@ -188,7 +188,7 @@ async def test_read_publicacao_not_found(client: AsyncClient):
 
 
 async def test_update_publicacao(
-        client: AsyncClient, publicacao_fix: Publicacao, autor_fix: Membro
+        auth_client: AsyncClient, publicacao_fix: Publicacao, autor_fix: Membro
 ):
     """Testa PUT /{id} (Atualizar Publicação)"""
     new_title = "Título Atualizado"
@@ -197,7 +197,7 @@ async def test_update_publicacao(
         "autor_ids": [autor_fix.id]  # Precisa reenviar relacionamentos
     }
 
-    response = await client.put(f"{API_PREFIX}/{publicacao_fix.id}", json=data)
+    response = await auth_client.put(f"{API_PREFIX}/{publicacao_fix.id}", json=data)
     assert response.status_code == status.HTTP_200_OK
 
     result = response.json()
@@ -205,14 +205,14 @@ async def test_update_publicacao(
     assert result["id"] == publicacao_fix.id
 
 
-async def test_delete_publicacao(client: AsyncClient, db: AsyncSession, publicacao_fix: Publicacao):
+async def test_delete_publicacao(auth_client: AsyncClient, db: AsyncSession, publicacao_fix: Publicacao):
     """Testa DELETE /{id} (Deletar Publicação)"""
     # Deleta
-    response_del = await client.delete(f"{API_PREFIX}/{publicacao_fix.id}")
+    response_del = await auth_client.delete(f"{API_PREFIX}/{publicacao_fix.id}")
     assert response_del.status_code == status.HTTP_204_NO_CONTENT
 
     # Verifica se foi deletado
-    response_get = await client.get(f"{API_PREFIX}/{publicacao_fix.id}")
+    response_get = await auth_client.get(f"{API_PREFIX}/{publicacao_fix.id}")
     assert response_get.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -239,14 +239,14 @@ async def test_search_publicacoes_avancada(client: AsyncClient, publicacao_fix: 
     assert response_fail.json()["total"] == 0
 
 
-async def test_upload_image_publicacao(client: AsyncClient, publicacao_fix: Publicacao):
+async def test_upload_image_publicacao(auth_client: AsyncClient, publicacao_fix: Publicacao):
     """Testa POST /{id}/upload-image"""
     # Cria um arquivo falso em memória
     fake_image = io.BytesIO(b"fakeimagedata")
 
     files = {"file": ("test_image.jpg", fake_image, "image/jpeg")}
 
-    response = await client.post(
+    response = await auth_client.post(
         f"{API_PREFIX}/{publicacao_fix.id}/upload-image", files=files
     )
 

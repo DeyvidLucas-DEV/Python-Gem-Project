@@ -51,9 +51,11 @@ async def create_subgrupo(
         *,
         db: AsyncSession = Depends(deps.get_db_session),
         subgrupo_in: schemas.SubgrupoCreate,
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> Any:
     """
     Criar novo subgrupo.
+    Requer autenticação.
     """
     # Verificar se já existe subgrupo com o mesmo nome
     existing = await crud.subgrupo.get_by_nome(db, nome_grupo=subgrupo_in.nome_grupo)
@@ -91,9 +93,11 @@ async def update_subgrupo(
         db: AsyncSession = Depends(deps.get_db_session),
         id: int,
         subgrupo_in: schemas.SubgrupoUpdate,
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> Any:
     """
     Atualizar subgrupo.
+    Requer autenticação.
     """
     subgrupo = await crud.subgrupo.get(db, id=id)
     if not subgrupo:
@@ -120,9 +124,11 @@ async def delete_subgrupo(
         *,
         db: AsyncSession = Depends(deps.get_db_session),
         id: int,
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> None:
     """
     Deletar subgrupo.
+    Requer autenticação.
     """
     subgrupo = await crud.subgrupo.get(db, id=id)
     if not subgrupo:
@@ -140,9 +146,11 @@ async def add_membro_to_subgrupo(
         db: AsyncSession = Depends(deps.get_db_session),
         id: int,
         membro_id: int,
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> dict:
     """
     Adicionar membro ao subgrupo.
+    Requer autenticação.
     """
     # Verificar se subgrupo existe
     subgrupo = await crud.subgrupo.get(db, id=id)
@@ -177,9 +185,11 @@ async def remove_membro_from_subgrupo(
         db: AsyncSession = Depends(deps.get_db_session),
         id: int,
         membro_id: int,
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> None:
     """
     Remover membro do subgrupo.
+    Requer autenticação.
     """
     success = await crud.subgrupo.remove_membro(db, subgrupo_id=id, membro_id=membro_id)
     if not success:
@@ -215,9 +225,11 @@ async def upload_icone_subgrupo(
         db: AsyncSession = Depends(deps.get_db_session),
         id: int,
         file: UploadFile = File(...),
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> dict:
     """
     Upload do ícone do subgrupo.
+    Requer autenticação.
     """
     subgrupo = await crud.subgrupo.get(db, id=id)
     if not subgrupo:
@@ -252,9 +264,11 @@ async def upload_background_subgrupo(
         db: AsyncSession = Depends(deps.get_db_session),
         id: int,
         file: UploadFile = File(...),
+        current_user: Any = Depends(deps.get_current_active_user),
 ) -> dict:
     """
     Upload do background do subgrupo.
+    Requer autenticação.
     """
     subgrupo = await crud.subgrupo.get(db, id=id)
     if not subgrupo:
