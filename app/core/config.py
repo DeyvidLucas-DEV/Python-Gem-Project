@@ -17,7 +17,13 @@ class Settings(BaseSettings):
     DESCRIPTION: str = "API para gerenciamento de publicações, membros e subgrupos"
 
     # CORS
-    BACKEND_CORS_ORIGINS: Union[str, list[str]] = ["http://localhost:3000", "http://localhost:8080"]
+    BACKEND_CORS_ORIGINS: Union[str, list[str]] = [
+        "http://localhost:3000",
+        "http://localhost:5173",  # Vite dev server
+        "http://localhost:8080",
+        "http://161.97.180.189",  # VPS frontend
+        "https://161.97.180.189"  # VPS frontend HTTPS (se usar)
+    ]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
