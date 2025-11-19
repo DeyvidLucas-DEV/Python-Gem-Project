@@ -9,7 +9,7 @@ pipeline {
     environment {
         // Variáveis de ambiente para testes
         PYTHON_VERSION = 'python3'
-        VENV_PATH = "${WORKSPACE}/.venv"
+        VENV_PATH = '.venv'
     }
 
     stages {
@@ -43,6 +43,16 @@ pipeline {
                     . ${VENV_PATH}/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
+
+                    # Criar .env mínimo para testes se não existir
+                    if [ ! -f .env ]; then
+                        echo "Criando .env para testes..."
+                        cat > .env << 'ENVFILE'
+DATABASE_URL=sqlite+aiosqlite:///:memory:
+SECRET_KEY=test-secret-key-for-ci-only
+BACKEND_CORS_ORIGINS=*
+ENVFILE
+                    fi
                 '''
             }
         }
@@ -58,7 +68,11 @@ pipeline {
             steps {
                 echo 'Executando testes automatizados...'
                 sh '''
+                    # Ativar ambiente virtual
                     . ${VENV_PATH}/bin/activate
+
+                    # Configurar PYTHONPATH para encontrar módulos
+                    export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
                     # Executar pytest com cobertura
                     pytest tests/ -v \
