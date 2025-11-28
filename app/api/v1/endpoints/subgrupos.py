@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import crud, schemas
 from app.api import deps
 from app.core.config import settings
+from app.core.storage import save_file, delete_file
 
 router = APIRouter()
 
@@ -245,17 +246,21 @@ async def upload_icone_subgrupo(
             detail="Arquivo deve ser uma imagem"
         )
 
-    # Ler arquivo
-    content = await file.read()
+    # Deletar arquivo antigo se existir
+    if subgrupo.icone_grupo_path:
+        await delete_file(subgrupo.icone_grupo_path)
 
-    # Atualizar subgrupo
+    # Salvar novo arquivo
+    file_path = await save_file(file, "subgrupos/icons")
+
+    # Atualizar subgrupo com o path do arquivo
     await crud.subgrupo.update(
         db,
         db_obj=subgrupo,
-        obj_in={"icone_grupo": content}
+        obj_in={"icone_grupo_path": file_path}
     )
 
-    return {"message": "Ícone atualizado com sucesso"}
+    return {"message": "Ícone atualizado com sucesso", "path": file_path}
 
 
 @router.post("/{id}/upload-background")
@@ -284,14 +289,18 @@ async def upload_background_subgrupo(
             detail="Arquivo deve ser uma imagem"
         )
 
-    # Ler arquivo
-    content = await file.read()
+    # Deletar arquivo antigo se existir
+    if subgrupo.bg_path:
+        await delete_file(subgrupo.bg_path)
 
-    # Atualizar subgrupo
+    # Salvar novo arquivo
+    file_path = await save_file(file, "subgrupos/backgrounds")
+
+    # Atualizar subgrupo com o path do arquivo
     await crud.subgrupo.update(
         db,
         db_obj=subgrupo,
-        obj_in={"bg": content}
+        obj_in={"bg_path": file_path}
     )
 
-    return {"message": "Background atualizado com sucesso"}
+    return {"message": "Background atualizado com sucesso", "path": file_path}

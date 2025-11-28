@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-# Import Field from pydantic, not field from dataclasses
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, computed_field
 from typing import Optional, TYPE_CHECKING
-# 👇 IMPORT 'date' AQUI
 from datetime import datetime, date
 from enum import Enum
 
-# Use TYPE_CHECKING to avoid circular imports at runtime
+from app.core.storage import get_file_url
+
 if TYPE_CHECKING:
     from .membro import MembroSummary
     from .subgrupo import SubgrupoSummary
@@ -20,7 +19,7 @@ class TipoPublicacaoEnum(str, Enum):
     TESE = "tese"
     CAPITULO_LIVRO = "capitulo_livro"
     POLICY_BRIEF = "policy_brief"
-    ARTIGO = "Artigo"  # <-- CORRIGIDO
+    ARTIGO = "Artigo"
 
 
 class PublicacaoBase(BaseModel):
@@ -28,8 +27,6 @@ class PublicacaoBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=500, description="Título da publicação")
     description: Optional[str] = Field(None, description="Descrição da publicação")
     type: TipoPublicacaoEnum = Field(..., description="Tipo da publicação")
-
-    # 👇 CORREÇÃO AQUI
     year: Optional[date] = Field(None, description="Data da publicação (AAAA-MM-DD)")
 
 
@@ -44,10 +41,7 @@ class PublicacaoUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=500)
     description: Optional[str] = None
     type: Optional[TipoPublicacaoEnum] = None
-
-    # 👇 CORREÇÃO AQUI
     year: Optional[date] = None
-
     autor_ids: Optional[list[int]] = None
     subgrupo_ids: Optional[list[int]] = None
 
@@ -57,15 +51,31 @@ class PublicacaoInDB(PublicacaoBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    created_at: datetime
+    updated_at: datetime
+    image_path: Optional[str] = None
 
-    # (Estes campos 'created_at' e 'updated_at' estão corretos como datetime)
+
+class Publicacao(BaseModel):
+    """Schema público para Publicação com URL de imagem."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    description: Optional[str]
+    type: TipoPublicacaoEnum
+    year: Optional[date]
     created_at: datetime
     updated_at: datetime
 
+    # Path armazenado no banco (não exposto diretamente)
+    image_path: Optional[str] = Field(None, exclude=True)
 
-class Publicacao(PublicacaoInDB):
-    """Schema público para Publicação."""
-    pass
+    @computed_field(return_type=Optional[str])
+    @property
+    def image_url(self) -> Optional[str]:
+        """URL para acessar a imagem da publicação."""
+        return get_file_url(self.image_path)
 
 
 class PublicacaoSummary(BaseModel):

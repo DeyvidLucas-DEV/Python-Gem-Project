@@ -220,7 +220,10 @@ async def test_upload_foto_membro(auth_client: AsyncClient, membro_fix: Membro):
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"message": "Foto atualizada com sucesso"}
+    result = response.json()
+    assert result["message"] == "Foto atualizada com sucesso"
+    assert "path" in result
+    assert result["path"].startswith("membros/photos/")
 
 
 async def test_upload_foto_invalid_type(auth_client: AsyncClient, membro_fix: Membro):
@@ -247,7 +250,10 @@ async def test_upload_background_membro(auth_client: AsyncClient, membro_fix: Me
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"message": "Background atualizado com sucesso"}
+    result = response.json()
+    assert result["message"] == "Background atualizado com sucesso"
+    assert "path" in result
+    assert result["path"].startswith("membros/backgrounds/")
 
 
 async def test_search_membros_by_nome(client: AsyncClient, db: AsyncSession):

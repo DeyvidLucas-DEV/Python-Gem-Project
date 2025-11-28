@@ -1,7 +1,7 @@
-from sqlalchemy import String, Text, LargeBinary, Enum, TIMESTAMP, Date
+from sqlalchemy import String, Text, Enum, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import Optional, TYPE_CHECKING
-from datetime import datetime, date
+from datetime import date
 import enum
 
 from .base import Base, TimestampMixin
@@ -18,7 +18,7 @@ class TipoPublicacaoEnum(str, enum.Enum):
     TESE = "tese"
     CAPITULO_LIVRO = "capitulo_livro"
     POLICY_BRIEF = "policy_brief"
-    ARTIGO = "Artigo" # <-- mude para minúsculo
+    ARTIGO = "Artigo"
 
 
 class Publicacao(Base, TimestampMixin):
@@ -29,7 +29,7 @@ class Publicacao(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text)
-    image: Mapped[Optional[bytes]] = mapped_column(LargeBinary)
+    image_path: Mapped[Optional[str]] = mapped_column(String(500))
     type: Mapped[TipoPublicacaoEnum] = mapped_column(
         Enum(TipoPublicacaoEnum, name="tipo_publicacao_enum", native_enum=False, values_callable=lambda x: [e.value for e in x]),
         nullable=False

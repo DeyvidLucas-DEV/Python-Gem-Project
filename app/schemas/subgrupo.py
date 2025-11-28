@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import base64
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 
 from pydantic import BaseModel, Field, ConfigDict, computed_field
+
+from app.core.storage import get_file_url
 
 if TYPE_CHECKING:
     from .membro import MembroSummary
@@ -35,46 +36,38 @@ class SubgrupoInDB(SubgrupoBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    # No banco, os campos são bytes
-    icone_grupo: Optional[bytes] = None
-    bg: Optional[bytes] = None
+    icone_grupo_path: Optional[str] = None
+    bg_path: Optional[str] = None
 
 
 class Subgrupo(BaseModel):
     """
     Schema público para Subgrupo.
-    Este schema define explicitamente os campos de saída,
-    evitando a herança dos campos de bytes e a necessidade de excluí-los.
+    Retorna URLs para as imagens ao invés de dados binários.
     """
     model_config = ConfigDict(from_attributes=True)
 
-    # Campos que queremos na resposta da API
     id: int
     nome_grupo: str
     descricao: Optional[str]
     created_at: datetime
     updated_at: datetime
 
-    # Campos que serão usados para os @computed_field
-    # Eles não serão expostos diretamente no JSON final.
-    icone_grupo: Optional[bytes] = Field(None, exclude=True)
-    bg: Optional[bytes] = Field(None, exclude=True)
+    # Paths armazenados no banco (não expostos diretamente)
+    icone_grupo_path: Optional[str] = Field(None, exclude=True)
+    bg_path: Optional[str] = Field(None, exclude=True)
 
     @computed_field(return_type=Optional[str])
     @property
-    def icone_grupo_b64(self) -> Optional[str]:
-        """Campo computado que retorna o ícone como uma string Base64."""
-        if self.icone_grupo:
-            return base64.b64encode(self.icone_grupo).decode('utf-8')
-        return None
+    def icone_grupo_url(self) -> Optional[str]:
+        """URL para acessar o ícone do subgrupo."""
+        return get_file_url(self.icone_grupo_path)
 
     @computed_field(return_type=Optional[str])
     @property
-    def bg_b64(self) -> Optional[str]:
-        """Campo computado que retorna o background como uma string Base64."""
-        if self.bg:
-            return base64.b64encode(self.bg).decode('utf-8')
-        return None
+    def bg_url(self) -> Optional[str]:
+        """URL para acessar o background do subgrupo."""
+        return get_file_url(self.bg_path)
 
 
 class SubgrupoSummary(BaseModel):

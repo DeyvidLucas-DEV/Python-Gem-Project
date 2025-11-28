@@ -1,9 +1,14 @@
+import os
+import tempfile
 import pytest
 import pytest_asyncio
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from httpx import AsyncClient, ASGITransport
+
+# Configurar diretório de uploads para testes ANTES de importar o app
+os.environ["UPLOADS_PATH"] = tempfile.mkdtemp(prefix="test_uploads_")
 
 # Importe o 'app' principal e a Base declarativa
 from main import app

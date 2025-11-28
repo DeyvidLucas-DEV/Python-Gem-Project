@@ -308,7 +308,10 @@ async def test_upload_icone_subgrupo(auth_client: AsyncClient, subgrupo_fix: Sub
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"message": "Ícone atualizado com sucesso"}
+    result = response.json()
+    assert result["message"] == "Ícone atualizado com sucesso"
+    assert "path" in result
+    assert result["path"].startswith("subgrupos/icons/")
 
 
 async def test_upload_icone_invalid_type(auth_client: AsyncClient, subgrupo_fix: Subgrupo):
@@ -335,7 +338,10 @@ async def test_upload_background_subgrupo(auth_client: AsyncClient, subgrupo_fix
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"message": "Background atualizado com sucesso"}
+    result = response.json()
+    assert result["message"] == "Background atualizado com sucesso"
+    assert "path" in result
+    assert result["path"].startswith("subgrupos/backgrounds/")
 
 
 async def test_read_subgrupos_with_search_query(

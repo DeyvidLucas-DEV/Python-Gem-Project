@@ -251,7 +251,10 @@ async def test_upload_image_publicacao(auth_client: AsyncClient, publicacao_fix:
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"message": "Imagem atualizada com sucesso"}
+    result = response.json()
+    assert result["message"] == "Imagem atualizada com sucesso"
+    assert "path" in result
+    assert result["path"].startswith("publicacoes/images/")
 
 
 async def test_get_estatisticas_publicacoes(client: AsyncClient, publicacao_fix: Publicacao):

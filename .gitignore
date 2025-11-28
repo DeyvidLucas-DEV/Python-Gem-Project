@@ -28,3 +28,7 @@ __pycache__/
 # 5. Arquivos gerados pelo SO
 # Cache de miniaturas do Windows
 Thumbs.db
+
+# 6. Uploads de arquivos (imagens)
+# Pasta onde as imagens são armazenadas localmente
+uploads/

@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import crud, schemas
 from app.api import deps
 from app.models.publicacao import TipoPublicacaoEnum
+from app.core.storage import save_file, delete_file
 
 router = APIRouter()
 
@@ -262,17 +263,21 @@ async def upload_image_publicacao(
             detail="Arquivo deve ser uma imagem"
         )
 
-    # Ler arquivo
-    content = await file.read()
+    # Deletar arquivo antigo se existir
+    if publicacao.image_path:
+        await delete_file(publicacao.image_path)
 
-    # Atualizar publicação
+    # Salvar novo arquivo
+    file_path = await save_file(file, "publicacoes/images")
+
+    # Atualizar publicação com o path do arquivo
     await crud.publicacao.update(
         db,
         db_obj=publicacao,
-        obj_in={"image": content}
+        obj_in={"image_path": file_path}
     )
 
-    return {"message": "Imagem atualizada com sucesso"}
+    return {"message": "Imagem atualizada com sucesso", "path": file_path}
 
 
 @router.get("/estatisticas/", response_model=dict)

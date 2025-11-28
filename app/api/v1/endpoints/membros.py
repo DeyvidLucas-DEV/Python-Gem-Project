@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import crud, schemas
 from app.api import deps
+from app.core.storage import save_file, delete_file
 
 router = APIRouter()
 
@@ -192,17 +193,21 @@ async def upload_foto_membro(
             detail="Arquivo deve ser uma imagem"
         )
 
-    # Ler arquivo
-    content = await file.read()
+    # Deletar arquivo antigo se existir
+    if membro.foto_path:
+        await delete_file(membro.foto_path)
 
-    # Atualizar membro
+    # Salvar novo arquivo
+    file_path = await save_file(file, "membros/photos")
+
+    # Atualizar membro com o path do arquivo
     await crud.membro.update(
         db,
         db_obj=membro,
-        obj_in={"foto": content}
+        obj_in={"foto_path": file_path}
     )
 
-    return {"message": "Foto atualizada com sucesso"}
+    return {"message": "Foto atualizada com sucesso", "path": file_path}
 
 
 @router.post("/{id}/upload-background")
@@ -231,17 +236,21 @@ async def upload_background_membro(
             detail="Arquivo deve ser uma imagem"
         )
 
-    # Ler arquivo
-    content = await file.read()
+    # Deletar arquivo antigo se existir
+    if membro.bg_path:
+        await delete_file(membro.bg_path)
 
-    # Atualizar membro
+    # Salvar novo arquivo
+    file_path = await save_file(file, "membros/backgrounds")
+
+    # Atualizar membro com o path do arquivo
     await crud.membro.update(
         db,
         db_obj=membro,
-        obj_in={"bg": content}
+        obj_in={"bg_path": file_path}
     )
 
-    return {"message": "Background atualizado com sucesso"}
+    return {"message": "Background atualizado com sucesso", "path": file_path}
 
 
 @router.get("/search/nome", response_model=dict)

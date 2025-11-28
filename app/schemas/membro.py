@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-# Import Field from pydantic, not field from dataclasses
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, computed_field
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 
-# Use TYPE_CHECKING to avoid circular imports at runtime
+from app.core.storage import get_file_url
+
 if TYPE_CHECKING:
     from .subgrupo import SubgrupoSummary
     from .publicacao import PublicacaoSummary
@@ -37,11 +37,36 @@ class MembroInDB(MembroBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    foto_path: Optional[str] = None
+    bg_path: Optional[str] = None
 
 
-class Membro(MembroInDB):
-    """Schema público para Membro."""
-    pass
+class Membro(BaseModel):
+    """Schema público para Membro com URLs de imagens."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nome: str
+    descricao: Optional[str]
+    experiencia: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+
+    # Paths armazenados no banco (não expostos diretamente)
+    foto_path: Optional[str] = Field(None, exclude=True)
+    bg_path: Optional[str] = Field(None, exclude=True)
+
+    @computed_field(return_type=Optional[str])
+    @property
+    def foto_url(self) -> Optional[str]:
+        """URL para acessar a foto do membro."""
+        return get_file_url(self.foto_path)
+
+    @computed_field(return_type=Optional[str])
+    @property
+    def bg_url(self) -> Optional[str]:
+        """URL para acessar o background do membro."""
+        return get_file_url(self.bg_path)
 
 
 class MembroSummary(BaseModel):

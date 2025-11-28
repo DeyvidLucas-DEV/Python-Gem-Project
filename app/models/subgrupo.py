@@ -1,4 +1,4 @@
-from sqlalchemy import String, Text, LargeBinary
+from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import Optional, TYPE_CHECKING
 
@@ -17,8 +17,8 @@ class Subgrupo(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True)
     nome_grupo: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     descricao: Mapped[Optional[str]] = mapped_column(Text)
-    icone_grupo: Mapped[Optional[bytes]] = mapped_column(LargeBinary)
-    bg: Mapped[Optional[bytes]] = mapped_column(LargeBinary)
+    icone_grupo_path: Mapped[Optional[str]] = mapped_column(String(500))
+    bg_path: Mapped[Optional[str]] = mapped_column(String(500))
 
     # Relacionamentos Many-to-Many
     membros: Mapped[list["Membro"]] = relationship(
