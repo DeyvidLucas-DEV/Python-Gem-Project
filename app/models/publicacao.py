@@ -36,6 +36,9 @@ class Publicacao(Base, TimestampMixin):
     )
     year: Mapped[Optional[date]] = mapped_column(Date)
 
+    # Link externo para a publicação original
+    link_externo: Mapped[Optional[str]] = mapped_column(String(1000))
+
     # Relacionamentos Many-to-Many
     autores: Mapped[list["Membro"]] = relationship(
         "Membro",

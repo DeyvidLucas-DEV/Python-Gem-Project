@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
+import json
 
 from pydantic import BaseModel, Field, ConfigDict, computed_field
 
@@ -56,6 +57,7 @@ class Subgrupo(BaseModel):
     # Paths armazenados no banco (não expostos diretamente)
     icone_grupo_path: Optional[str] = Field(None, exclude=True)
     bg_path: Optional[str] = Field(None, exclude=True)
+    infograficos: Optional[str] = Field(None, exclude=True)  # JSON string de paths
 
     @computed_field(return_type=Optional[str])
     @property
@@ -68,6 +70,18 @@ class Subgrupo(BaseModel):
     def bg_url(self) -> Optional[str]:
         """URL para acessar o background do subgrupo."""
         return get_file_url(self.bg_path)
+
+    @computed_field(return_type=Optional[list[str]])
+    @property
+    def infograficos_urls(self) -> Optional[list[str]]:
+        """URLs para acessar os infográficos do subgrupo."""
+        if not self.infograficos:
+            return None
+        try:
+            paths = json.loads(self.infograficos)
+            return [get_file_url(path) for path in paths if path]
+        except (json.JSONDecodeError, TypeError):
+            return None
 
 
 class SubgrupoSummary(BaseModel):

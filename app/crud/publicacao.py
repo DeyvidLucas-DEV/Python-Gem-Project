@@ -97,17 +97,29 @@ class CRUDPublicacao(CRUDBase[Publicacao, PublicacaoCreate, PublicacaoUpdate]):
             limit: int = 100
     ) -> tuple[List[Publicacao], int]:
         """Obter publicações por tipo."""
-        filters = {"type": tipo}
-
-        # --- CORREÇÃO DO BUG AQUI ---
-        # O 'load_relations' precisa ser uma lista, não um booleano
-        return await self.get_multi(
-            db,
-            skip=skip,
-            limit=limit,
-            filters=filters,
-            load_relations=["autores", "subgrupos"]
+        # Filtrar diretamente pelo valor do enum (string armazenada no banco)
+        query = (
+            select(self.model)
+            .where(self.model.type == tipo)
+            .offset(skip)
+            .limit(limit)
         )
+        count_query = (
+            select(func.count(self.model.id))
+            .where(self.model.type == tipo)
+        )
+
+        # Carregar relacionamentos
+        from sqlalchemy.orm import selectinload
+        query = query.options(
+            selectinload(self.model.autores),
+            selectinload(self.model.subgrupos)
+        )
+
+        result = await db.execute(query)
+        total = (await db.execute(count_query)).scalar_one()
+        items = result.scalars().all()
+        return list(items), total
 
     async def get_by_year(
             self,

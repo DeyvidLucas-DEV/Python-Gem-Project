@@ -28,6 +28,7 @@ class PublicacaoBase(BaseModel):
     description: Optional[str] = Field(None, description="Descrição da publicação")
     type: TipoPublicacaoEnum = Field(..., description="Tipo da publicação")
     year: Optional[date] = Field(None, description="Data da publicação (AAAA-MM-DD)")
+    link_externo: Optional[str] = Field(None, max_length=1000, description="Link externo para a publicação original")
 
 
 class PublicacaoCreate(PublicacaoBase):
@@ -42,6 +43,7 @@ class PublicacaoUpdate(BaseModel):
     description: Optional[str] = None
     type: Optional[TipoPublicacaoEnum] = None
     year: Optional[date] = None
+    link_externo: Optional[str] = Field(None, max_length=1000)
     autor_ids: Optional[list[int]] = None
     subgrupo_ids: Optional[list[int]] = None
 
@@ -65,6 +67,7 @@ class Publicacao(BaseModel):
     description: Optional[str]
     type: TipoPublicacaoEnum
     year: Optional[date]
+    link_externo: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

@@ -1,4 +1,5 @@
 from typing import Any, List, Optional
+import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -304,3 +305,111 @@ async def upload_background_subgrupo(
     )
 
     return {"message": "Background atualizado com sucesso", "path": file_path}
+
+
+@router.post("/{id}/upload-infografico")
+async def upload_infografico_subgrupo(
+        *,
+        db: AsyncSession = Depends(deps.get_db_session),
+        id: int,
+        file: UploadFile = File(...),
+        current_user: Any = Depends(deps.get_current_active_user),
+) -> dict:
+    """
+    Upload de um infográfico do subgrupo.
+    Adiciona à lista de infográficos existentes.
+    Requer autenticação.
+    """
+    subgrupo = await crud.subgrupo.get(db, id=id)
+    if not subgrupo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Subgrupo não encontrado"
+        )
+
+    # Validar tipo de arquivo
+    if not file.content_type.startswith('image/'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Arquivo deve ser uma imagem"
+        )
+
+    # Salvar novo arquivo
+    file_path = await save_file(file, "subgrupos/infograficos")
+
+    # Obter lista atual de infográficos
+    current_infograficos = []
+    if subgrupo.infograficos:
+        try:
+            current_infograficos = json.loads(subgrupo.infograficos)
+        except (json.JSONDecodeError, TypeError):
+            current_infograficos = []
+
+    # Adicionar novo path
+    current_infograficos.append(file_path)
+
+    # Atualizar subgrupo
+    await crud.subgrupo.update(
+        db,
+        db_obj=subgrupo,
+        obj_in={"infograficos": json.dumps(current_infograficos)}
+    )
+
+    return {
+        "message": "Infográfico adicionado com sucesso",
+        "path": file_path,
+        "total_infograficos": len(current_infograficos)
+    }
+
+
+@router.delete("/{id}/infografico/{index}")
+async def delete_infografico_subgrupo(
+        *,
+        db: AsyncSession = Depends(deps.get_db_session),
+        id: int,
+        index: int,
+        current_user: Any = Depends(deps.get_current_active_user),
+) -> dict:
+    """
+    Remove um infográfico do subgrupo pelo índice.
+    Requer autenticação.
+    """
+    subgrupo = await crud.subgrupo.get(db, id=id)
+    if not subgrupo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Subgrupo não encontrado"
+        )
+
+    # Obter lista atual de infográficos
+    current_infograficos = []
+    if subgrupo.infograficos:
+        try:
+            current_infograficos = json.loads(subgrupo.infograficos)
+        except (json.JSONDecodeError, TypeError):
+            current_infograficos = []
+
+    if index < 0 or index >= len(current_infograficos):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Índice inválido. Total de infográficos: {len(current_infograficos)}"
+        )
+
+    # Deletar arquivo
+    file_path = current_infograficos[index]
+    await delete_file(file_path)
+
+    # Remover da lista
+    current_infograficos.pop(index)
+
+    # Atualizar subgrupo
+    await crud.subgrupo.update(
+        db,
+        db_obj=subgrupo,
+        obj_in={"infograficos": json.dumps(current_infograficos) if current_infograficos else None}
+    )
+
+    return {
+        "message": "Infográfico removido com sucesso",
+        "total_infograficos": len(current_infograficos)
+    }

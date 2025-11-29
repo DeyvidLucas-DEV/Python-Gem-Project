@@ -21,6 +21,11 @@ class Membro(Base, TimestampMixin):
     bg_path: Mapped[Optional[str]] = mapped_column(String(500))
     foto_path: Mapped[Optional[str]] = mapped_column(String(500))
 
+    # Campos de contato/redes sociais
+    email: Mapped[Optional[str]] = mapped_column(String(255))
+    linkedin: Mapped[Optional[str]] = mapped_column(String(500))
+    lattes: Mapped[Optional[str]] = mapped_column(String(500))
+
     # Relacionamentos Many-to-Many
     subgrupos: Mapped[list["Subgrupo"]] = relationship(
         "Subgrupo",

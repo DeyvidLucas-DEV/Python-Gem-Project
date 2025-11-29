@@ -20,6 +20,9 @@ class Subgrupo(Base, TimestampMixin):
     icone_grupo_path: Mapped[Optional[str]] = mapped_column(String(500))
     bg_path: Mapped[Optional[str]] = mapped_column(String(500))
 
+    # Infográficos (múltiplas imagens, armazenadas como JSON com paths)
+    infograficos: Mapped[Optional[str]] = mapped_column(Text)  # JSON array de paths
+
     # Relacionamentos Many-to-Many
     membros: Mapped[list["Membro"]] = relationship(
         "Membro",

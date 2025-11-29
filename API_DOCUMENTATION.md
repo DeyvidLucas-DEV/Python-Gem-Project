@@ -13,6 +13,7 @@
 - [Modelos de Dados](#modelos-de-dados)
 - [Códigos de Status HTTP](#códigos-de-status-http)
 - [Exemplos de Integração](#exemplos-de-integração)
+- [URLs Assinadas para Arquivos](#urls-assinadas-para-arquivos)
 
 ---
 
@@ -1857,5 +1858,260 @@ Para dúvidas ou problemas com a API, entre em contato com a equipe de desenvolv
 
 ---
 
-**Última atualização:** 18 de Janeiro de 2025
-**Versão da API:** 1.0.0
+**Última atualização:** 28 de Novembro de 2025
+**Versão da API:** 1.1.0
+
+---
+
+## URLs Assinadas para Arquivos
+
+A API agora utiliza **URLs assinadas** para servir imagens de forma segura. Cada URL inclui um token criptográfico e um timestamp de expiração.
+
+### Como Funciona
+
+1. Ao buscar dados (membros, subgrupos, publicações), a API retorna:
+   - `*_path`: Caminho interno do arquivo (apenas referência)
+   - `*_url`: URL assinada pronta para uso (com token e expiração)
+
+2. URLs expiram após **1 hora** por segurança
+3. URLs expiradas ou adulteradas retornam `403 Forbidden`
+
+### Exemplo de Resposta
+
+```json
+{
+  "id": 1,
+  "nome": "João Silva",
+  "email": "joao@example.com",
+  "foto_path": "membros/photos/a1b2c3d4.jpg",
+  "foto_url": "/api/v1/files/membros/photos/a1b2c3d4.jpg?token=abc123def456&expires=1701234567",
+  "bg_path": "membros/backgrounds/e5f6g7h8.png",
+  "bg_url": "/api/v1/files/membros/backgrounds/e5f6g7h8.png?token=xyz789uvw012&expires=1701234567"
+}
+```
+
+### Campos por Entidade
+
+| Entidade | Path Fields | URL Fields |
+|----------|-------------|------------|
+| Membro | `foto_path`, `bg_path` | `foto_url`, `bg_url` |
+| Subgrupo | `icone_path`, `bg_path` | `icone_url`, `bg_url` |
+| Publicação | `imagem_path` | `imagem_url` |
+
+### Uso no Frontend
+
+#### React
+
+```jsx
+const API_BASE_URL = 'http://161.97.180.189';
+
+function MemberCard({ member }) {
+  const imageUrl = member.foto_url
+    ? `${API_BASE_URL}${member.foto_url}`
+    : '/placeholder-avatar.png';
+
+  return (
+    <div className="member-card">
+      <img
+        src={imageUrl}
+        alt={member.nome}
+        onError={(e) => { e.target.src = '/placeholder-avatar.png'; }}
+      />
+      <h3>{member.nome}</h3>
+    </div>
+  );
+}
+```
+
+#### Vue.js
+
+```vue
+<template>
+  <div class="member-card">
+    <img
+      :src="getImageUrl(member.foto_url)"
+      :alt="member.nome"
+      @error="handleImageError"
+    />
+    <h3>{{ member.nome }}</h3>
+  </div>
+</template>
+
+<script>
+const API_BASE_URL = 'http://161.97.180.189';
+
+export default {
+  props: ['member'],
+  methods: {
+    getImageUrl(url) {
+      return url ? `${API_BASE_URL}${url}` : '/placeholder-avatar.png';
+    },
+    handleImageError(event) {
+      event.target.src = '/placeholder-avatar.png';
+    }
+  }
+};
+</script>
+```
+
+#### Vanilla JavaScript
+
+```javascript
+const API_BASE_URL = 'http://161.97.180.189';
+
+function renderMember(member) {
+  const imageUrl = member.foto_url
+    ? `${API_BASE_URL}${member.foto_url}`
+    : '/placeholder.png';
+
+  return `
+    <div class="member-card">
+      <img
+        src="${imageUrl}"
+        alt="${member.nome}"
+        onerror="this.src='/placeholder.png'"
+      />
+      <h3>${member.nome}</h3>
+    </div>
+  `;
+}
+```
+
+### Renovação Automática de URLs
+
+Como as URLs expiram em 1 hora, implemente um refresh periódico:
+
+```javascript
+// React Hook para refresh automático
+import { useState, useEffect } from 'react';
+
+function useMembersWithRefresh() {
+  const [members, setMembers] = useState([]);
+
+  const fetchMembers = async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/membros`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
+    const data = await response.json();
+    setMembers(data.items);
+  };
+
+  useEffect(() => {
+    fetchMembers();
+
+    // Refresh a cada 50 minutos (antes de expirar)
+    const interval = setInterval(fetchMembers, 50 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return members;
+}
+```
+
+### Tratamento de Erros
+
+| Status | Causa | Ação |
+|--------|-------|------|
+| 403 | URL expirada | Recarregar dados da API para obter nova URL |
+| 403 | Token inválido | Verificar se URL não foi modificada |
+| 403 | Path traversal | Verificar caminho do arquivo |
+| 404 | Arquivo não existe | Arquivo foi deletado |
+
+### Segurança
+
+As URLs assinadas protegem contra:
+
+- **Acesso não autorizado**: Apenas quem tem acesso à API pode obter URLs válidas
+- **URLs adulteradas**: Token HMAC-SHA256 valida integridade
+- **Links permanentes**: Expiração impede compartilhamento indevido
+- **Path traversal**: Bloqueia tentativas de `../` e caminhos absolutos
+- **Extensões perigosas**: Apenas `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.svg`
+- **Pastas não autorizadas**: Apenas `subgrupos/`, `membros/`, `publicacoes/`
+
+### Comparação: Antes vs Depois
+
+| Antes (Base64) | Depois (URL Assinada) |
+|----------------|----------------------|
+| Dados grandes no JSON | JSON leve, imagem sob demanda |
+| Lento para carregar | Carregamento progressivo |
+| Sem cache | Cache do navegador (1h) |
+| Sempre público | Protegido com token |
+
+### Exemplo Completo de Integração
+
+```javascript
+// api.js - Configuração do cliente API
+import axios from 'axios';
+
+const API_BASE_URL = 'http://161.97.180.189';
+
+const api = axios.create({
+  baseURL: `${API_BASE_URL}/api/v1`,
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Função helper para URLs de imagem
+export const getImageUrl = (path) => {
+  if (!path) return null;
+  return `${API_BASE_URL}${path}`;
+};
+
+export default api;
+```
+
+```jsx
+// MembersList.jsx - Componente React completo
+import React, { useState, useEffect } from 'react';
+import api, { getImageUrl } from './api';
+
+function MembersList() {
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchMembers = async () => {
+    try {
+      const { data } = await api.get('/membros/');
+      setMembers(data.items);
+    } catch (error) {
+      console.error('Erro ao carregar membros:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMembers();
+
+    // Refresh automático a cada 50 minutos
+    const interval = setInterval(fetchMembers, 50 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) return <div>Carregando...</div>;
+
+  return (
+    <div className="members-grid">
+      {members.map(member => (
+        <div key={member.id} className="member-card">
+          <img
+            src={getImageUrl(member.foto_url) || '/placeholder.png'}
+            alt={member.nome}
+            onError={(e) => { e.target.src = '/placeholder.png'; }}
+          />
+          <h3>{member.nome}</h3>
+          <p>{member.descricao}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default MembersList;
+```

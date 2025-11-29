@@ -16,6 +16,9 @@ class MembroBase(BaseModel):
     nome: str = Field(..., min_length=1, max_length=255, description="Nome do membro")
     descricao: Optional[str] = Field(None, description="Descrição do membro")
     experiencia: Optional[str] = Field(None, description="Experiência do membro")
+    email: Optional[str] = Field(None, max_length=255, description="E-mail do membro")
+    linkedin: Optional[str] = Field(None, max_length=500, description="URL do LinkedIn")
+    lattes: Optional[str] = Field(None, max_length=500, description="URL do Currículo Lattes")
 
 
 class MembroCreate(MembroBase):
@@ -28,6 +31,9 @@ class MembroUpdate(BaseModel):
     nome: Optional[str] = Field(None, min_length=1, max_length=255)
     descricao: Optional[str] = None
     experiencia: Optional[str] = None
+    email: Optional[str] = Field(None, max_length=255)
+    linkedin: Optional[str] = Field(None, max_length=500)
+    lattes: Optional[str] = Field(None, max_length=500)
 
 
 class MembroInDB(MembroBase):
@@ -49,6 +55,9 @@ class Membro(BaseModel):
     nome: str
     descricao: Optional[str]
     experiencia: Optional[str]
+    email: Optional[str] = None
+    linkedin: Optional[str] = None
+    lattes: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
