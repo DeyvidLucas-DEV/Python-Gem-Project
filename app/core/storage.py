@@ -1,15 +1,24 @@
 """
 Módulo de Storage para gerenciamento de arquivos.
 Suporta armazenamento local e pode ser estendido para S3/MinIO.
+Inclui URLs assinadas com expiração para segurança.
 """
 import uuid
+import hmac
+import hashlib
+import time
+import re
 import aiofiles
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlencode, parse_qs
 from fastapi import UploadFile
 from abc import ABC, abstractmethod
 
 from app.core.config import settings
+
+# Tempo de expiração padrão: 1 hora (em segundos)
+URL_EXPIRATION_TIME = 3600
 
 
 class StorageBackend(ABC):
@@ -128,6 +137,111 @@ class LocalStorage(StorageBackend):
 storage = LocalStorage()
 
 
+def _generate_signature(path: str, expires: int) -> str:
+    """
+    Gera assinatura HMAC para URL.
+
+    Args:
+        path: Caminho do arquivo
+        expires: Timestamp de expiração
+
+    Returns:
+        Assinatura hexadecimal
+    """
+    message = f"{path}:{expires}"
+    signature = hmac.new(
+        settings.SECRET_KEY.encode(),
+        message.encode(),
+        hashlib.sha256
+    ).hexdigest()[:32]  # Usar apenas 32 caracteres
+    return signature
+
+
+def generate_signed_url(path: str, expiration_seconds: int = URL_EXPIRATION_TIME) -> str:
+    """
+    Gera URL assinada com tempo de expiração.
+
+    Args:
+        path: Caminho relativo do arquivo
+        expiration_seconds: Tempo de expiração em segundos (padrão: 1 hora)
+
+    Returns:
+        URL assinada com token e expiração
+    """
+    if not path:
+        return ""
+
+    expires = int(time.time()) + expiration_seconds
+    signature = _generate_signature(path, expires)
+
+    params = urlencode({
+        'token': signature,
+        'expires': expires
+    })
+
+    return f"{storage.base_url}/{path}?{params}"
+
+
+def verify_signed_url(path: str, token: str, expires: str) -> tuple[bool, str]:
+    """
+    Verifica se uma URL assinada é válida.
+
+    Args:
+        path: Caminho do arquivo
+        token: Token de assinatura
+        expires: Timestamp de expiração
+
+    Returns:
+        Tupla (válido, mensagem de erro)
+    """
+    try:
+        expires_int = int(expires)
+    except (ValueError, TypeError):
+        return False, "Parâmetro 'expires' inválido"
+
+    # Verificar expiração
+    if time.time() > expires_int:
+        return False, "URL expirada"
+
+    # Verificar assinatura
+    expected_signature = _generate_signature(path, expires_int)
+    if not hmac.compare_digest(token, expected_signature):
+        return False, "Assinatura inválida"
+
+    return True, ""
+
+
+def is_safe_path(path: str) -> bool:
+    """
+    Verifica se o path é seguro (previne path traversal attacks).
+
+    Args:
+        path: Caminho a ser verificado
+
+    Returns:
+        True se o path é seguro
+    """
+    # Bloquear path traversal
+    if '..' in path or path.startswith('/') or path.startswith('\\'):
+        return False
+
+    # Bloquear caracteres perigosos
+    if re.search(r'[<>:"|?*\x00-\x1f]', path):
+        return False
+
+    # Permitir apenas pastas conhecidas
+    allowed_prefixes = ('subgrupos/', 'membros/', 'publicacoes/')
+    if not path.startswith(allowed_prefixes):
+        return False
+
+    # Permitir apenas extensões de imagem
+    allowed_extensions = ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg')
+    if not path.lower().endswith(allowed_extensions):
+        return False
+
+    return True
+
+
 # Funções de conveniência
 async def save_file(file: UploadFile, folder: str) -> str:
     """Salva arquivo e retorna path relativo."""
@@ -140,7 +254,7 @@ async def delete_file(path: str) -> bool:
 
 
 def get_file_url(path: Optional[str]) -> Optional[str]:
-    """Retorna URL do arquivo ou None se path for None."""
+    """Retorna URL assinada do arquivo ou None se path for None."""
     if not path:
         return None
-    return storage.get_url(path)
+    return generate_signed_url(path)
