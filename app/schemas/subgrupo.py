@@ -84,12 +84,29 @@ class Subgrupo(BaseModel):
             return None
 
 
+# 👇 CLASSE ATUALIZADA - RETORNA ÍCONE E BACKGROUND DO SUBGRUPO
 class SubgrupoSummary(BaseModel):
     """Schema para um resumo de Subgrupo (usado em relações)."""
     model_config = ConfigDict(from_attributes=True)
+
     id: int
     nome_grupo: str
 
+    # Paths armazenados no banco (excluídos da resposta JSON)
+    icone_grupo_path: Optional[str] = Field(None, exclude=True)
+    bg_path: Optional[str] = Field(None, exclude=True)
+
+    @computed_field(return_type=Optional[str])
+    @property
+    def icone_grupo_url(self) -> Optional[str]:
+        """URL para acessar o ícone do subgrupo."""
+        return get_file_url(self.icone_grupo_path)
+
+    @computed_field(return_type=Optional[str])
+    @property
+    def bg_url(self) -> Optional[str]:
+        """URL para acessar o background do subgrupo."""
+        return get_file_url(self.bg_path)
 
 
 class SubgrupoWithRelations(Subgrupo):

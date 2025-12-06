@@ -12,9 +12,24 @@ from app.schemas.membro import MembroCreate, MembroUpdate
 class CRUDMembro(CRUDBase[Membro, MembroCreate, MembroUpdate]):
     """CRUD para Membros com operações específicas."""
 
+    # 👇 MÉTODO GET SOBRESCRITO - CARREGA SUBGRUPOS COM ÍCONE E BG
+    async def get(self, db: AsyncSession, *, id: int) -> Optional[Membro]:
+        """Buscar membro por ID com subgrupos carregados."""
+        query = (
+            select(self.model)
+            .where(self.model.id == id)
+            .options(selectinload(self.model.subgrupos))  # 👈 Carrega subgrupos
+        )
+        result = await db.execute(query)
+        return result.scalar_one_or_none()
+
     async def get_by_nome(self, db: AsyncSession, *, nome: str) -> Optional[Membro]:
         """Buscar membro por nome exato."""
-        query = select(self.model).where(self.model.nome == nome)
+        query = (
+            select(self.model)
+            .where(self.model.nome == nome)
+            .options(selectinload(self.model.subgrupos))  # 👈 Carrega subgrupos
+        )
         result = await db.execute(query)
         return result.scalar_one_or_none()
 
@@ -77,6 +92,7 @@ class CRUDMembro(CRUDBase[Membro, MembroCreate, MembroUpdate]):
             select(self.model)
             .join(membros_subgrupos)
             .where(membros_subgrupos.c.subgrupo_id == subgrupo_id)
+            .options(selectinload(self.model.subgrupos))  # 👈 Carrega subgrupos
             .offset(skip)
             .limit(limit)
         )
@@ -113,6 +129,7 @@ class CRUDMembro(CRUDBase[Membro, MembroCreate, MembroUpdate]):
                     self.model.experiencia.ilike(f"%{query_text}%")
                 )
             )
+            .options(selectinload(self.model.subgrupos))  # 👈 Carrega subgrupos
             .offset(skip)
             .limit(limit)
         )
